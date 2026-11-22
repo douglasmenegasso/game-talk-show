@@ -1,11 +1,7 @@
 (function () {
 'use strict';
 const cfg = window.GAME_TALK_SHOW_CONFIG || {};
-const configured = Boolean(
-  cfg.supabaseUrl && cfg.supabasePublishableKey &&
-  !String(cfg.supabaseUrl).includes('COLE') &&
-  !String(cfg.supabasePublishableKey).includes('COLE')
-);
+const configured = Boolean(cfg.supabaseUrl && cfg.supabasePublishableKey && !String(cfg.supabaseUrl).includes('COLE'));
 const params = new URLSearchParams(window.location.search);
 const forceDemo = params.get('demo') === '1';
 let client = null;
@@ -20,175 +16,140 @@ const state = {
   playerState: { points_balance: 0, kitchen_level: 2, last_rating: null },
   players: [], rewards: [], missions: [], orders: [], equipment: [],
   summary: null, selectedMissionId: null, recipe: null, exportJson: '',
-  comments: [], lastRecipe: null, selectedOptionByReward: {}
+  comments: [], lastRecipe: null, selectedOptionByReward: {},
+  purchaseHistory: [], showPurchaseModal: false, adminStoreTab: 'items'
 };
 
 const demoData = {
-  playerState: { points_balance: 25, kitchen_level: 2, last_rating: null },
+  playerState: { points_balance: 45, kitchen_level: 2, last_rating: null },
   equipment: [
     { equipment_code: 'batedeira', mode: 'temporary', status: 'active', acquired_at: '2026-11-21T10:00:00-03:00' }
   ],
   rewards: [
+    // NÍVEL 2 - Básico (15-30 pts aluguel, 75-150 pts compra permanente)
     {
       id: 'r1', code: 'confeitos', name: 'Confeitos', category: 'confeitos',
       description: 'Confeitos coloridos para decorar bolos e biscoitos.',
-      base_price: 8, max_price: 10, reward_type: 'ingredient',
+      base_price: 15, permanent_price: 75, reward_type: 'ingredient',
       level_required: 2, active: true, requires_approval: false,
-      emoji: '🍬',
-      image_url: 'https://images.unsplash.com/photo-1558301211-0d8c8ddee6ec?w=400&h=300&fit=crop',
-      options: [
-        { id: 'coracao', label: 'Corações', emoji: '❤️' },
-        { id: 'estrela', label: 'Estrelas', emoji: '⭐' },
-        { id: 'flor', label: 'Flores', emoji: '🌸' }
-      ]
+      emoji: '🍬', image_url: 'https://images.unsplash.com/photo-1558301211-0d8c8ddee6ec?w=400&h=300&fit=crop',
+      options: [{ id: 'coracao', label: 'Corações', emoji: '❤️' }, { id: 'estrela', label: 'Estrelas', emoji: '⭐' }, { id: 'flor', label: 'Flores', emoji: '🌸' }]
     },
     {
       id: 'r2', code: 'corantes', name: 'Corantes Alimentícios', category: 'corantes',
       description: 'Corantes em gel para dar vida às receitas.',
-      base_price: 9, max_price: 10, reward_type: 'ingredient',
+      base_price: 20, permanent_price: 100, reward_type: 'ingredient',
       level_required: 2, active: true, requires_approval: false,
-      emoji: '🎨',
-      image_url: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&h=300&fit=crop',
-      options: [
-        { id: 'vermelho', label: 'Vermelho', emoji: '🔴' },
-        { id: 'azul', label: 'Azul', emoji: '🔵' },
-        { id: 'verde', label: 'Verde', emoji: '🟢' }
-      ]
+      emoji: '🎨', image_url: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&h=300&fit=crop',
+      options: [{ id: 'vermelho', label: 'Vermelho', emoji: '🔴' }, { id: 'azul', label: 'Azul', emoji: '🔵' }, { id: 'verde', label: 'Verde', emoji: '🟢' }]
     },
     {
       id: 'r3', code: 'aromatizantes', name: 'Aromatizantes', category: 'aromatizantes',
       description: 'Essências para perfumar suas receitas.',
-      base_price: 10, max_price: 10, reward_type: 'ingredient',
+      base_price: 18, permanent_price: 90, reward_type: 'ingredient',
       level_required: 2, active: true, requires_approval: false,
-      emoji: '🌺',
-      image_url: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400&h=300&fit=crop',
-      options: [
-        { id: 'baunilha', label: 'Baunilha', emoji: '🌼' },
-        { id: 'morango', label: 'Morango', emoji: '🍓' },
-        { id: 'coco', label: 'Coco', emoji: '🥥' }
-      ]
+      emoji: '🌺', image_url: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=400&h=300&fit=crop',
+      options: [{ id: 'baunilha', label: 'Baunilha', emoji: '🌼' }, { id: 'morango', label: 'Morango', emoji: '🍓' }, { id: 'coco', label: 'Coco', emoji: '🥥' }]
     },
     {
       id: 'r4', code: 'gelatinas', name: 'Gelatinas', category: 'gelatinas',
       description: 'Gelatinas coloridas para sobremesas divertidas.',
-      base_price: 6, max_price: 10, reward_type: 'ingredient',
+      base_price: 15, permanent_price: 75, reward_type: 'ingredient',
       level_required: 2, active: true, requires_approval: false,
-      emoji: '🍮',
-      image_url: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&h=300&fit=crop',
-      options: [
-        { id: 'morango-g', label: 'Morango', emoji: '🍓' },
-        { id: 'uva', label: 'Uva', emoji: '🍇' },
-        { id: 'limao', label: 'Limão', emoji: '🍋' }
-      ]
+      emoji: '🍮', image_url: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=400&h=300&fit=crop',
+      options: [{ id: 'morango-g', label: 'Morango', emoji: '🍓' }, { id: 'uva', label: 'Uva', emoji: '🍇' }, { id: 'limao', label: 'Limão', emoji: '🍋' }]
     },
     {
       id: 'r5', code: 'temperos-basicos', name: 'Temperos Básicos', category: 'temperos-basicos',
       description: 'Temperos frescos e básicos para o dia a dia.',
-      base_price: 7, max_price: 10, reward_type: 'ingredient',
+      base_price: 15, permanent_price: 75, reward_type: 'ingredient',
       level_required: 2, active: true, requires_approval: false,
-      emoji: '🧂',
-      image_url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&h=300&fit=crop',
-      options: [
-        { id: 'sal', label: 'Sal fino', emoji: '🧂' },
-        { id: 'pimenta', label: 'Pimenta-do-reino', emoji: '🌶️' },
-        { id: 'cebolinha', label: 'Cebolinha fresca', emoji: '🌿' }
-      ]
+      emoji: '🧂', image_url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&h=300&fit=crop',
+      options: [{ id: 'sal', label: 'Sal fino', emoji: '🧂' }, { id: 'pimenta', label: 'Pimenta-do-reino', emoji: '🌶️' }, { id: 'cebolinha', label: 'Cebolinha fresca', emoji: '🌿' }]
     },
+    // NÍVEL 1 - Avançado (5-10 pts aluguel, 25-50 pts compra permanente)
     {
       id: 'r6', code: 'cremes-molhos', name: 'Cremes e Molhos', category: 'cremes-molhos',
       description: 'Cremes e molhos especiais para pratos sofisticados.',
-      base_price: 18, max_price: 30, reward_type: 'ingredient',
+      base_price: 8, permanent_price: 40, reward_type: 'ingredient',
       level_required: 1, active: true, requires_approval: false,
-      emoji: '🥛',
-      image_url: 'https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400&h=300&fit=crop',
-      options: [
-        { id: 'creme-leite', label: 'Creme de leite', emoji: '🥛' },
-        { id: 'molho-branco', label: 'Molho branco', emoji: '🍝' },
-        { id: 'ganache', label: 'Ganache', emoji: '🍫' },
-        { id: 'caramelo', label: 'Caramelo', emoji: '🍯' },
-        { id: 'pesto', label: 'Pesto', emoji: '🌿' }
-      ]
+      emoji: '🥛', image_url: 'https://images.unsplash.com/photo-1472476443507-c7a5948772fc?w=400&h=300&fit=crop',
+      options: [{ id: 'creme-leite', label: 'Creme de leite', emoji: '🥛' }, { id: 'molho-branco', label: 'Molho branco', emoji: '🍝' }, { id: 'ganache', label: 'Ganache', emoji: '🍫' }, { id: 'caramelo', label: 'Caramelo', emoji: '🍯' }, { id: 'pesto', label: 'Pesto', emoji: '🌿' }]
     },
     {
       id: 'r7', code: 'leites-especiais', name: 'Leites Especiais', category: 'leites',
       description: 'Leites especiais para receitas diferenciadas.',
-      base_price: 15, max_price: 30, reward_type: 'ingredient',
+      base_price: 7, permanent_price: 35, reward_type: 'ingredient',
       level_required: 1, active: true, requires_approval: false,
-      emoji: '🥥',
-      image_url: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&h=300&fit=crop',
-      options: [
-        { id: 'coco', label: 'Leite de coco', emoji: '🥥' },
-        { id: 'condensado', label: 'Leite condensado', emoji: '🥛' },
-        { id: 'amendoas', label: 'Leite de amêndoas', emoji: '🌰' },
-        { id: 'aveia', label: 'Leite de aveia', emoji: '🌾' },
-        { id: 'castanhas', label: 'Leite de castanhas', emoji: '🥜' }
-      ]
+      emoji: '🥥', image_url: 'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&h=300&fit=crop',
+      options: [{ id: 'coco', label: 'Leite de coco', emoji: '🥥' }, { id: 'condensado', label: 'Leite condensado', emoji: '🥛' }, { id: 'amendoas', label: 'Leite de amêndoas', emoji: '🌰' }, { id: 'aveia', label: 'Leite de aveia', emoji: '🌾' }, { id: 'castanhas', label: 'Leite de castanhas', emoji: '🥜' }]
     },
     {
       id: 'r8', code: 'temperos-sofisticados', name: 'Temperos Sofisticados', category: 'temperos-sofisticados',
       description: 'Temperos especiais para pratos elegantes.',
-      base_price: 22, max_price: 30, reward_type: 'ingredient',
+      base_price: 10, permanent_price: 50, reward_type: 'ingredient',
       level_required: 1, active: true, requires_approval: false,
-      emoji: '🌶️',
-      image_url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&h=300&fit=crop',
-      options: [
-        { id: 'paprica', label: 'Páprica defumada', emoji: '🌶️' },
-        { id: 'lemon-pepper', label: 'Lemon pepper', emoji: '🍋' },
-        { id: 'pimenta-rosa', label: 'Pimenta rosa', emoji: '🌸' },
-        { id: 'cominho', label: 'Cominho', emoji: '🟤' },
-        { id: 'cardamomo', label: 'Cardamomo', emoji: '🌱' }
-      ]
+      emoji: '🌶️', image_url: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=400&h=300&fit=crop',
+      options: [{ id: 'paprica', label: 'Páprica defumada', emoji: '🌶️' }, { id: 'lemon-pepper', label: 'Lemon pepper', emoji: '🍋' }, { id: 'pimenta-rosa', label: 'Pimenta rosa', emoji: '🌸' }, { id: 'cominho', label: 'Cominho', emoji: '🟤' }, { id: 'cardamomo', label: 'Cardamomo', emoji: '🌱' }]
     },
     {
-      id: 'r9', code: 'ingrediente-secreto', name: 'Ingrediente Secreto', category: 'secreto',
+      id: 'r9', code: 'proteinas', name: 'Proteínas', category: 'proteinas',
+      description: 'Carnes, frango, peixe e ovos para suas receitas.',
+      base_price: 9, permanent_price: 45, reward_type: 'ingredient',
+      level_required: 1, active: true, requires_approval: false,
+      emoji: '🥩', image_url: 'https://images.unsplash.com/photo-1607623814075-e51df1bdc82f?w=400&h=300&fit=crop',
+      options: [{ id: 'frango', label: 'Peito de frango', emoji: '🍗' }, { id: 'carne-moida', label: 'Carne moída', emoji: '🥩' }, { id: 'ovos', label: 'Ovos caipira', emoji: '🥚' }, { id: 'peixe', label: 'Filé de peixe', emoji: '🐟' }, { id: 'bacon', label: 'Bacon', emoji: '🥓' }]
+    },
+    {
+      id: 'r10', code: 'verduras-legumes', name: 'Verduras e Legumes', category: 'verduras-legumes',
+      description: 'Vegetais frescos para receitas saudáveis.',
+      base_price: 6, permanent_price: 30, reward_type: 'ingredient',
+      level_required: 1, active: true, requires_approval: false,
+      emoji: '🥬', image_url: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop',
+      options: [{ id: 'alface', label: 'Alface', emoji: '🥬' }, { id: 'tomate', label: 'Tomate', emoji: '🍅' }, { id: 'cenoura', label: 'Cenoura', emoji: '🥕' }, { id: 'batata', label: 'Batata', emoji: '🥔' }, { id: 'abobrinha', label: 'Abobrinha', emoji: '🥒' }]
+    },
+    {
+      id: 'r11', code: 'frutas', name: 'Frutas', category: 'frutas',
+      description: 'Frutas frescas para sobremesas e sucos.',
+      base_price: 7, permanent_price: 35, reward_type: 'ingredient',
+      level_required: 1, active: true, requires_approval: false,
+      emoji: '🍎', image_url: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=300&fit=crop',
+      options: [{ id: 'maca', label: 'Maçã', emoji: '🍎' }, { id: 'banana', label: 'Banana', emoji: '🍌' }, { id: 'morango', label: 'Morango', emoji: '🍓' }, { id: 'uva', label: 'Uva', emoji: '🍇' }, { id: 'laranja', label: 'Laranja', emoji: '🍊' }]
+    },
+    {
+      id: 'r12', code: 'graos', name: 'Grãos e Cereais', category: 'graos',
+      description: 'Arroz, feijão, lentilha e outros grãos.',
+      base_price: 5, permanent_price: 25, reward_type: 'ingredient',
+      level_required: 1, active: true, requires_approval: false,
+      emoji: '🌾', image_url: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop',
+      options: [{ id: 'arroz', label: 'Arroz', emoji: '🍚' }, { id: 'feijao', label: 'Feijão', emoji: '🫘' }, { id: 'lentilha', label: 'Lentilha', emoji: '🟤' }, { id: 'aveia', label: 'Aveia', emoji: '🌾' }, { id: 'quinoa', label: 'Quinoa', emoji: '⚪' }]
+    },
+    {
+      id: 'r13', code: 'ingrediente-secreto', name: 'Ingrediente Secreto', category: 'secreto',
       description: 'Um ingrediente misterioso escolhido pelo Chefe Triix!',
-      base_price: 25, max_price: 30, reward_type: 'ingredient',
+      base_price: 10, permanent_price: 50, reward_type: 'ingredient',
       level_required: 1, active: true, requires_approval: true,
-      emoji: '🎁',
-      image_url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
-      options: [
-        { id: 'surpresa-1', label: 'Surpresa do Chef', emoji: '🎁' },
-        { id: 'surpresa-2', label: 'Toque especial', emoji: '✨' },
-        { id: 'surpresa-3', label: 'Segredo da casa', emoji: '🤫' }
-      ]
+      emoji: '🎁', image_url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
+      options: [{ id: 'surpresa-1', label: 'Surpresa do Chef', emoji: '🎁' }, { id: 'surpresa-2', label: 'Toque especial', emoji: '✨' }, { id: 'surpresa-3', label: 'Segredo da casa', emoji: '🤫' }]
     },
+    // NÍVEL 3 - Apenas aluguel (75-150 pts, 5x mais caro que nível 2)
     {
-      id: 'r10', code: 'ingredientes-sofisticados', name: 'Ingredientes Sofisticados', category: 'sofisticados',
-      description: 'Ingredientes para pratos mais elaborados.',
-      base_price: 28, max_price: 30, reward_type: 'ingredient',
-      level_required: 1, active: true, requires_approval: true,
-      emoji: '🍜',
-      image_url: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=400&h=300&fit=crop',
-      options: [
-        { id: 'molho-yakisoba', label: 'Molho yakisoba', emoji: '🍜' },
-        { id: 'farinha-empanar', label: 'Farinha panko', emoji: '🍤' },
-        { id: 'queijo-parmesao', label: 'Parmesão ralado', emoji: '🧀' },
-        { id: 'azeite-trufado', label: 'Azeite trufado', emoji: '🫒' },
-        { id: 'vinagre-balsamico', label: 'Balsâmico', emoji: '🍷' }
-      ]
-    },
-    {
-      id: 'r11', code: 'chocolate-belga', name: 'Chocolate Belga', category: 'sofisticados',
-      description: 'Chocolate importado para receitas especiais.',
-      base_price: 45, max_price: 30, reward_type: 'ingredient',
-      level_required: 1, active: true, requires_approval: true, is_suggestion: true,
-      emoji: '🍫',
-      image_url: 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=400&h=300&fit=crop',
-      options: [
-        { id: 'meio-amargo', label: 'Meio amargo 70%', emoji: '🍫' },
-        { id: 'ao-leite', label: 'Ao leite', emoji: '🟫' },
-        { id: 'branco', label: 'Branco', emoji: '🤍' }
-      ]
+      id: 'r14', code: 'utensilio-eletrico', name: 'Utensílio Elétrico', category: 'utensilios-eletricos',
+      description: 'Batedeira, liquidificador ou processador por tarefa.',
+      base_price: 75, permanent_price: null, reward_type: 'equipment',
+      level_required: 3, active: true, requires_approval: true,
+      emoji: '⚙️', image_url: 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=400&h=300&fit=crop',
+      options: [{ id: 'batedeira', label: 'Batedeira', emoji: '⚙️' }, { id: 'liquidificador', label: 'Liquidificador', emoji: '🥤' }, { id: 'processador', label: 'Processador', emoji: '🔌' }]
     }
   ],
   missions: [
     { id: 'm1', title: 'Bolo de chocolate com calda', kind: 'recipe', points_delta: 15, rating: null, occurred_at: '2026-11-21T14:30:00-03:00', feedback: 'Massa fofinha! Lembre-se de peneirar a farinha.' }
   ],
   orders: [
-    { id: 'o1', reward_id: 'r1', reward_name: 'Confeitos', selected_option_label: 'Estrelas ⭐', requested_price: 8, status: 'pending', created_at: '2026-11-21T15:00:00-03:00' },
-    { id: 'o2', reward_id: 'r6', reward_name: 'Cremes e Molhos', selected_option_label: 'Ganache 🍫', requested_price: 18, status: 'approved', created_at: '2026-11-20T10:00:00-03:00' }
+    { id: 'o1', reward_id: 'r1', reward_name: 'Confeitos', selected_option_label: 'Estrelas ⭐', requested_price: 15, status: 'pending', created_at: '2026-11-21T15:00:00-03:00', recipes_remaining: 3 },
+    { id: 'o2', reward_id: 'r6', reward_name: 'Cremes e Molhos', selected_option_label: 'Ganache 🍫', requested_price: 8, status: 'approved', created_at: '2026-11-20T10:00:00-03:00', recipes_remaining: 2 }
   ],
-  players: [{ player_id: 'demo-klara', display_name: 'Klara', points_balance: 25, kitchen_level: 2, last_rating: null }],
+  players: [{ player_id: 'demo-klara', display_name: 'Klara', points_balance: 45, kitchen_level: 2, last_rating: null }],
   summary: { pending_orders: [], recent_missions: [], active_equipment: [] },
   recipe: {
     recipe: { title: 'Bolo de chocolate com calda', yield: '1 bolo médio', steps: [{ order: 1, text: 'Adulto preaquece o forno a 180 °C.' }, { order: 2, text: 'Misturar ovos, açúcar, leite e óleo.' }] },
@@ -197,10 +158,12 @@ const demoData = {
     products: [{ name: 'achocolatado', brand: null, note: 'Marca não informada.' }],
     equipment: ['tigela grande', 'fouet', 'forno']
   },
-  comments: [
-    { id: 'c1', email: 'tia@familia.com', message: 'Que lindo o projeto da Klara!', created_at: '2026-11-21T16:00:00-03:00' }
-  ],
-  lastRecipe: { title: 'Bolo de chocolate com calda', ingredients: ['ovos', 'açúcar', 'leite', 'óleo', 'achocolatado'] }
+  comments: [{ id: 'c1', email: 'tia@familia.com', message: 'Que lindo o projeto da Klara!', created_at: '2026-11-21T16:00:00-03:00' }],
+  lastRecipe: { title: 'Bolo de chocolate com calda', ingredients: ['ovos', 'açúcar', 'leite', 'óleo', 'achocolatado'] },
+  purchaseHistory: [
+    { id: 'h1', reward_name: 'Confeitos', option_label: 'Estrelas ⭐', quantity: 1, level: 2, acquired_at: '2026-11-20T10:00:00-03:00', recipes_remaining: 2 },
+    { id: 'h2', reward_name: 'Cremes e Molhos', option_label: 'Ganache 🍫', quantity: 1, level: 1, acquired_at: '2026-11-19T14:00:00-03:00', recipes_remaining: 1 }
+  ]
 };
 
 const LOGIN_FLOATS = [
@@ -217,6 +180,23 @@ const EQUIP_META = {
   'liquidificador': { icon: '🥤', name: 'Liquidificador' },
   'micro-ondas': { icon: '⏲️', name: 'Micro-ondas' },
   'airfryer': { icon: '🍟', name: 'Airfryer' }
+};
+
+const CATEGORY_LABELS = {
+  'confeitos': '🍬 Confeitos',
+  'corantes': '🎨 Corantes Alimentícios',
+  'aromatizantes': '🌺 Aromatizantes',
+  'gelatinas': '🍮 Gelatinas',
+  'temperos-basicos': '🧂 Temperos Básicos',
+  'cremes-molhos': '🥛 Cremes e Molhos',
+  'leites': '🥥 Leites Especiais',
+  'temperos-sofisticados': '🌶️ Temperos Sofisticados',
+  'proteinas': '🥩 Proteínas',
+  'verduras-legumes': '🥬 Verduras e Legumes',
+  'frutas': '🍎 Frutas',
+  'graos': '🌾 Grãos e Cereais',
+  'secreto': '🎁 Ingrediente Secreto',
+  'utensilios-eletricos': '⚙️ Utensílios Elétricos'
 };
 
 const $ = (s) => document.querySelector(s);
@@ -300,7 +280,7 @@ async function onLogin(e) {
 }
 
 function tabsFor(role) {
-  if (role === 'admin') return [['dashboard', 'Visão geral'], ['import', 'Importar'], ['orders', 'Pedidos'], ['adjust', 'Ajustar'], ['export', 'Exportar']];
+  if (role === 'admin') return [['dashboard', 'Visão geral'], ['import', 'Importar'], ['orders', 'Pedidos'], ['adjust', 'Ajustar'], ['export', 'Exportar'], ['admin-store', 'Admin Loja']];
   return [['dashboard', 'Cozinha'], ['missions', 'Missões'], ['store', 'Loja'], ['orders', 'Meus Pedidos'], ['comments', 'Comentários']];
 }
 
@@ -323,33 +303,18 @@ function renderPlayer() {
 function renderPlayerDashboard() {
   const ps = state.playerState || { points_balance: 0, kitchen_level: 2 };
   const kitchen = kitchenInfo(ps.kitchen_level); setKitchen(ps.kitchen_level);
-  const missions = state.missions || [];
-  const recent = missions.slice(0, 3).map(m =>
+  const recent = (state.missions || []).slice(0, 3).map(m =>
     '<div class="list-item"><div><div class="title">' + esc(m.title) + '</div><div class="meta">Início: ' + esc(fmtDate(m.occurred_at)) + '</div></div><div class="right"><span class="pill ' + (m.points_delta >= 0 ? 'good' : 'bad') + '">' + (m.points_delta >= 0 ? '+' : '') + esc(m.points_delta) + ' pts</span></div></div>'
   ).join('');
-  const suggestions = renderChefSuggestions();
   return '<div class="grid cols-3"><div class="card"><span class="muted small">Saldo</span><div style="font-size:32px;font-weight:800">' + esc(ps.points_balance) + ' pts</div></div>' +
     '<div class="card"><span class="muted small">Cozinha</span><div style="font-size:24px;font-weight:800">' + kitchen.emoji + ' ' + esc(kitchen.name) + '</div></div>' +
     '<div class="card"><span class="muted small">Nível</span><div style="font-size:24px;font-weight:800">' + esc(ps.kitchen_level) + '</div></div></div>' +
-    '<div class="card"><h3 style="margin:0">Sua cozinha</h3>' + renderKitchenScene(ps.kitchen_level, state.equipment || []) + '</div>' +
-    suggestions +
+    '<div class="card"><h3 style="margin:0">Sua cozinha</h3>' + renderKitchenScene(ps.kitchen_level, state.equipment) + '</div>' +
     '<div class="card"><h3>Últimas missões</h3><div class="list">' + (recent || '<p class="muted">Nenhuma missão ainda.</p>') + '</div></div>';
 }
 
-function renderChefSuggestions() {
-  const suggestions = [
-    'Que tal tentar um bolo de cenoura com cobertura de chocolate? Você já sabe fazer massa de bolo!',
-    'Panquecas doces são ótimas para o café da manhã e usam ingredientes simples.',
-    'Brigadeiro é fácil e você já conhece o processo de mexer no fogo (com adulto).'
-  ];
-  return '<div class="chef-feedback"><h4>👨‍🍳 Sugestões do Chefe Triix</h4><ul>' + 
-    suggestions.map(s => '<li>' + esc(s) + '</li>').join('') + 
-    '</ul><p class="small muted mt"><strong>Bônus:</strong> Seguir uma sugestão de prato novo garante +3 pontos na avaliação final!</p></div>';
-}
-
 function renderMissions() {
-  const missions = state.missions || [];
-  const items = missions.map(m => {
+  const items = (state.missions || []).map(m => {
     const isOpen = state.selectedMissionId === m.id;
     const recipeHtml = isOpen && state.recipe ? renderRecipe(state.recipe, false) : '';
     return '<div class="list-item">' +
@@ -379,45 +344,42 @@ function renderRecipe(r, hideGuidance) {
     (equipment.length ? '<div class="mt"><h4>Utensílios</h4><ul>' + equipment.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : '');
 }
 
-// ===== LOJA COM PROTEÇÕES =====
+// ===== LOJA COMPLETA =====
 function renderStore() {
   const ps = state.playerState || { points_balance: 0, kitchen_level: 2 };
   const rewards = (state.rewards || []).filter(r => r && r.active);
   
+  // Nível 3 bloqueado para compra, apenas aluguel
   if (ps.kitchen_level === 3) {
-    return '<div class="card"><h3>Loja</h3><p class="muted">Na Cozinha de Campanha (Nível 3), o resgate de ingredientes está temporariamente suspenso até a reforma!</p></div>';
+    return '<div class="card"><h3>Loja - Cozinha de Campanha</h3><p class="muted">Na Cozinha de Campanha (Nível 3), apenas aluguel de utensílios está disponível por 5x o valor do nível 2.</p></div>';
   }
 
+  // Filtra por nível
+  const availableRewards = rewards.filter(r => {
+    if (ps.kitchen_level === 1) return r.level_required === 1;
+    if (ps.kitchen_level === 2) return r.level_required === 2;
+    return false;
+  });
+
+  // Agrupa por categoria
   const categories = {};
-  rewards.forEach(r => {
+  availableRewards.forEach(r => {
     const cat = r.category || 'outros';
     if (!categories[cat]) categories[cat] = [];
     categories[cat].push(r);
   });
 
-  const categoryLabels = {
-    'confeitos': '🍬 Confeitos',
-    'corantes': '🎨 Corantes Alimentícios',
-    'aromatizantes': '🌺 Aromatizantes',
-    'gelatinas': '🍮 Gelatinas',
-    'temperos-basicos': '🧂 Temperos Básicos',
-    'cremes-molhos': '🥛 Cremes e Molhos',
-    'leites': '🥥 Leites Especiais',
-    'temperos-sofisticados': '🌶️ Temperos Sofisticados',
-    'secreto': '🎁 Ingrediente Secreto',
-    'sofisticados': '✨ Ingredientes Sofisticados'
-  };
-
-  let html = '<div class="notice ok">Escolha uma opção, envie o pedido e aguarde a aprovação do Douglas. Pontos só são descontados na aprovação.</div>';
+  let html = '<div class="card" style="cursor:pointer" data-action="show-balance"><span class="muted small">Saldo disponível</span><div style="font-size:32px;font-weight:800;color:var(--accent)">' + esc(ps.points_balance) + ' pts</div><p class="muted small mt">Clique para ver histórico de compras</p></div>';
+  html += '<div class="notice ok">⚠️ Itens comprados devem ser usados em até 3 receitas! Escolha uma opção, envie o pedido e aguarde a aprovação do Douglas.</div>';
 
   Object.keys(categories).forEach(cat => {
     const items = categories[cat];
-    html += '<div class="store-category"><h4>' + esc(categoryLabels[cat] || cat) + '</h4><div class="grid cols-3">';
+    html += '<div class="store-category"><h4>' + esc(CATEGORY_LABELS[cat] || cat) + '</h4><div class="grid cols-3">';
     items.forEach(r => {
-      const isAboveMax = r.base_price > r.max_price;
+      const isEquip = r.reward_type === 'equipment';
       const canAfford = ps.points_balance >= r.base_price;
       const btnDisabled = !canAfford ? 'disabled' : '';
-      const btnText = canAfford ? (isAboveMax ? 'Sugerir compra' : 'Pedir resgate') : 'Pontos insuficientes';
+      const btnText = canAfford ? 'Pedir resgate' : 'Pontos insuficientes';
       const selectedOpt = state.selectedOptionByReward[r.id];
       const options = r.options || [];
       const optionsHtml = options.map(opt => 
@@ -429,15 +391,25 @@ function renderStore() {
       
       html += '<div class="reward-card-new">' +
         (r.image_url ? '<img class="reward-img" src="' + esc(r.image_url) + '" alt="' + esc(r.name) + '" onerror="this.outerHTML=\'<div class=\\\'reward-img-fallback\\\'>' + esc(r.emoji || '🔹') + '</div>\'">' : '<div class="reward-img-fallback">' + esc(r.emoji || '🔹') + '</div>') +
-        '<h5>' + esc(r.name) + (isAboveMax ? '<span class="suggestion-badge">sugestão</span>' : '') + '</h5>' +
+        '<h5>' + esc(r.name) + '</h5>' +
         '<div class="reward-desc">' + esc(r.description || '') + '</div>' +
-        '<div class="reward-price' + (isAboveMax ? ' suggestion' : '') + '">' + esc(r.base_price) + ' pts' + (isAboveMax ? ' (acima de R$ ' + r.max_price.toFixed(2).replace('.',',') + ')' : '') + '</div>' +
+        '<div class="reward-price">' + esc(r.base_price) + ' pts (aluguel)' + (r.permanent_price ? '<br><span class="small muted">ou ' + esc(r.permanent_price) + ' pts (permanente)</span>' : '') + '</div>' +
         '<div class="options-grid">' + optionsHtml + '</div>' +
+        (isEquip ? '<div class="field mt"><label>Modo</label><select id="mode-' + esc(r.code) + '"><option value="temporary">Aluguel (' + esc(r.base_price) + ' pts)</option><option value="permanent">Permanente (' + esc(r.permanent_price || r.base_price * 5) + ' pts)</option></select></div>' : '') +
         '<button class="btn btn-request" data-action="request-reward" data-reward="' + esc(r.id) + '" ' + btnDisabled + '>' + btnText + '</button>' +
       '</div>';
     });
     html += '</div></div>';
   });
+
+  // Modal de histórico
+  if (state.showPurchaseModal) {
+    const history = state.purchaseHistory || demoData.purchaseHistory || [];
+    const historyHtml = history.map(h => 
+      '<div class="list-item"><div><div class="title">' + esc(h.reward_name) + '</div><div class="meta">' + esc(h.option_label) + ' • Nível ' + esc(h.level) + '</div><div class="meta">Adquirido: ' + esc(fmtDate(h.acquired_at)) + '</div></div><div class="right"><span class="pill ' + (h.recipes_remaining > 0 ? 'good' : 'bad') + '">' + esc(h.recipes_remaining) + ' receitas restantes</span></div></div>'
+    ).join('');
+    html += '<div class="modal-overlay" data-action="close-modal"><div class="modal-content"><h3>📦 Histórico de Compras</h3><div class="list">' + (historyHtml || '<p class="muted">Nenhuma compra ainda.</p>') + '</div><button class="btn mt" data-action="close-modal">Fechar</button></div></div>';
+  }
 
   return html;
 }
@@ -452,6 +424,7 @@ function renderPlayerOrders() {
   const renderList = (list) => list.length ? list.map(o => 
     '<div class="list-item"><div><div class="title">' + esc(o.reward_name || 'Item') + '</div>' +
     (o.selected_option_label ? '<div class="order-selected-option">' + esc(o.selected_option_label) + '</div>' : '') +
+    (o.recipes_remaining !== undefined ? '<div class="meta">⏰ Usar em ' + esc(o.recipes_remaining) + ' receitas</div>' : '') +
     '<div class="meta">' + esc(fmtDate(o.created_at)) + ' • ' + esc(o.requested_price) + ' pts</div></div>' +
     '<div class="right"><span class="pill ' + (o.status === 'approved' ? 'good' : o.status === 'cancelled' ? 'bad' : 'warn') + '">' + 
     esc(o.status === 'approved' ? 'Aprovado' : o.status === 'cancelled' ? 'Cancelado' : 'Aguardando') + '</span></div></div>'
@@ -486,6 +459,7 @@ function renderAdmin() {
   if (state.tab === 'orders') return renderAdminOrders();
   if (state.tab === 'adjust') return renderAdminAdjust();
   if (state.tab === 'export') return renderAdminExport();
+  if (state.tab === 'admin-store') return renderAdminStore();
   return renderAdminDashboard();
 }
 
@@ -533,6 +507,26 @@ function renderAdminDashboard() {
     (pendingRows || '<p class="muted">Nenhum pedido pendente.</p>') + '</div></div>' +
     '<div class="card"><h3>Missões recentes</h3><div class="list">' +
     (recentRows || '<p class="muted">Nenhuma missão recente.</p>') + '</div></div></div>';
+}
+
+// ===== ADMIN LOJA =====
+function renderAdminStore() {
+  const rewards = state.rewards || demoData.rewards || [];
+  const tabs = [['items', 'Itens'], ['add', 'Adicionar'], ['config', 'Configurar']];
+  const tabsHtml = tabs.map(([id, label]) => '<button class="tab ' + (state.adminStoreTab === id ? 'active' : '') + '" data-action="admin-store-tab" data-tab="' + id + '">' + esc(label) + '</button>').join('');
+  
+  let content = '';
+  if (state.adminStoreTab === 'items') {
+    content = rewards.map(r => 
+      '<div class="list-item"><div><div class="title">' + esc(r.name) + '</div><div class="meta">Categoria: ' + esc(r.category) + ' • Nível: ' + esc(r.level_required) + '</div><div class="meta">Aluguel: ' + esc(r.base_price) + ' pts' + (r.permanent_price ? ' • Permanente: ' + esc(r.permanent_price) + ' pts' : '') + '</div></div><div class="right"><span class="pill ' + (r.active ? 'good' : 'muted') + '">' + (r.active ? 'Ativo' : 'Inativo') + '</span><button class="btn small secondary mt" data-action="toggle-reward" data-id="' + esc(r.id) + '">' + (r.active ? 'Desativar' : 'Ativar') + '</button></div></div>'
+    ).join('');
+  } else if (state.adminStoreTab === 'add') {
+    content = '<div class="card"><h3>Adicionar novo item</h3><div class="field"><label>Nome</label><input class="input" id="new-reward-name" /></div><div class="field"><label>Categoria</label><select id="new-reward-category">' + Object.keys(CATEGORY_LABELS).map(c => '<option value="' + esc(c) + '">' + esc(CATEGORY_LABELS[c]) + '</option>').join('') + '</select></div><div class="field"><label>Descrição</label><textarea class="input" id="new-reward-desc" rows="2"></textarea></div><div class="grid cols-2"><div class="field"><label>Preço aluguel (pts)</label><input class="input" id="new-reward-price" type="number" /></div><div class="field"><label>Preço permanente (pts)</label><input class="input" id="new-reward-permanent" type="number" /></div></div><div class="field"><label>Nível necessário</label><select id="new-reward-level"><option value="1">Nível 1</option><option value="2">Nível 2</option><option value="3">Nível 3</option></select></div><div class="field"><label>Tipo</label><select id="new-reward-type"><option value="ingredient">Ingrediente</option><option value="equipment">Equipamento</option></select></div><button class="btn" data-action="add-reward">Adicionar item</button></div>';
+  } else if (state.adminStoreTab === 'config') {
+    content = '<div class="card"><h3>Configuração automática</h3><p class="muted">Selecione aleatoriamente itens para a próxima compra baseado no valor mínimo.</p><div class="field"><label>Valor mínimo (pts)</label><input class="input" id="auto-min-price" type="number" value="15" /></div><button class="btn" data-action="auto-select-rewards">Selecionar automaticamente</button></div>';
+  }
+  
+  return '<div class="tabs">' + tabsHtml + '</div>' + content;
 }
 
 function exampleMissionPayload() {
@@ -643,6 +637,7 @@ function loadDemoData() {
     state.equipment = demoData.equipment || [];
     state.comments = demoData.comments || [];
     state.lastRecipe = demoData.lastRecipe || null;
+    state.purchaseHistory = demoData.purchaseHistory || [];
   }
 }
 
@@ -668,11 +663,7 @@ async function doAction(action, el) {
       if (isDemoActive()) {
         state.recipe = demoData.recipe;
       } else {
-        const { data, error } = await client
-          .from('mission_recipes')
-          .select('*')
-          .eq('mission_id', id)
-          .maybeSingle();
+        const { data, error } = await client.from('mission_recipes').select('*').eq('mission_id', id).maybeSingle();
         if (error) throw error;
         state.recipe = data || null;
         if (!data) toast('Esta missão não tem receita vinculada.', 'error');
@@ -687,40 +678,78 @@ async function doAction(action, el) {
       render();
       return;
     }
+    if (action === 'show-balance') {
+      state.showPurchaseModal = !state.showPurchaseModal;
+      render();
+      return;
+    }
+    if (action === 'close-modal') {
+      state.showPurchaseModal = false;
+      render();
+      return;
+    }
     if (action === 'request-reward') {
       const rewardId = el.dataset.reward;
       const reward = (state.rewards || []).find(r => r.id === rewardId);
       if (!reward) { toast('Recompensa não encontrada.', 'error'); return; }
       
       const ps = state.playerState || { points_balance: 0, kitchen_level: 2 };
-      if (ps.points_balance < reward.base_price) { toast('Pontos insuficientes!', 'error'); return; }
+      const modeEl = document.getElementById('mode-' + reward.code);
+      const mode = modeEl ? modeEl.value : 'temporary';
+      const price = mode === 'permanent' ? (reward.permanent_price || reward.base_price * 5) : reward.base_price;
       
-      if (reward.level_required > ps.kitchen_level) {
-        toast('Sua cozinha ainda não alcançou o nível necessário.', 'error'); return;
-      }
+      if (ps.points_balance < price) { toast('Pontos insuficientes!', 'error'); return; }
+      if (reward.level_required > ps.kitchen_level) { toast('Sua cozinha ainda não alcançou o nível necessário.', 'error'); return; }
       
       const selectedOptId = state.selectedOptionByReward[rewardId];
-      if (!selectedOptId) {
-        toast('Selecione uma opção antes de pedir o resgate.', 'error'); return;
-      }
+      if (!selectedOptId) { toast('Selecione uma opção antes de pedir o resgate.', 'error'); return; }
       const selectedOpt = (reward.options || []).find(o => o.id === selectedOptId);
       if (!selectedOpt) { toast('Opção inválida.', 'error'); return; }
       
-      const isSuggestion = reward.is_suggestion || reward.base_price > reward.max_price;
-      const note = isSuggestion ? 'SUGESTÃO (acima do valor máximo)' : 'Pedido via site';
-      
       if (isDemoActive()) { 
-        toast('Demo: pedido enviado! Opção: ' + selectedOpt.label, 'ok'); 
+        toast('⚠️ Demo: Item deve ser usado em 3 receitas! Pedido: ' + selectedOpt.label, 'ok'); 
         return; 
       }
       const { error } = await client.rpc('player_request_reward', { 
         p_reward_code: reward.code, 
-        p_note: note + ' | Opção: ' + selectedOpt.label, 
-        p_mode: null 
+        p_note: 'Opção: ' + selectedOpt.label + ' | Modo: ' + mode, 
+        p_mode: mode 
       });
       if (error) throw error;
       await refreshData(); state.tab = 'orders'; render();
-      toast('Pedido enviado para aprovação do Douglas!', 'ok');
+      toast('⚠️ Item deve ser usado em 3 receitas! Pedido enviado.', 'ok');
+      return;
+    }
+    if (action === 'admin-store-tab') { state.adminStoreTab = el.dataset.tab; render(); return; }
+    if (action === 'toggle-reward') {
+      const id = el.dataset.id;
+      const reward = (state.rewards || []).find(r => r.id === id);
+      if (reward) { reward.active = !reward.active; render(); toast('Item ' + (reward.active ? 'ativado' : 'desativado'), 'ok'); }
+      return;
+    }
+    if (action === 'add-reward') {
+      const name = $('#new-reward-name').value.trim();
+      const category = $('#new-reward-category').value;
+      const desc = $('#new-reward-desc').value.trim();
+      const price = parseInt($('#new-reward-price').value, 10);
+      const permanent = parseInt($('#new-reward-permanent').value, 10);
+      const level = parseInt($('#new-reward-level').value, 10);
+      const type = $('#new-reward-type').value;
+      if (!name || !price) { toast('Preencha nome e preço.', 'error'); return; }
+      const newReward = { id: 'r' + Date.now(), code: name.toLowerCase().replace(/\s+/g, '-'), name, category, description: desc, base_price: price, permanent_price: permanent || price * 5, reward_type: type, level_required: level, active: true, requires_approval: false, emoji: '🔹', options: [] };
+      state.rewards.push(newReward);
+      render();
+      toast('Item adicionado!', 'ok');
+      return;
+    }
+    if (action === 'auto-select-rewards') {
+      const minPrice = parseInt($('#auto-min-price').value, 10) || 15;
+      const rewards = state.rewards || [];
+      const eligible = rewards.filter(r => r.base_price >= minPrice && r.active);
+      const selected = eligible.sort(() => 0.5 - Math.random()).slice(0, 5);
+      selected.forEach(r => r.active = true);
+      render();
+      toast(selected.length + ' itens selecionados automaticamente!', 'ok');
       return;
     }
     if (action === 'admin-refresh') { await refreshData(); render(); toast('Dados atualizados.', 'ok'); return; }
