@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Game Talk Show — Cozinhando com a Klara</title>
+  <link rel="icon" type="image/png" href="assets/logo-klara.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="kitchen-2">
 
-  <!-- Barra superior com logo e usuário -->
   <header class="topbar">
     <div class="brand">
       <div class="brand-mark">🍳</div>
@@ -23,26 +23,17 @@
     </div>
   </header>
 
-  <!-- Container principal -->
   <main class="container">
-    <!-- Área de avisos/notificações -->
     <div id="notice" class="notice hidden"></div>
-
-    <!-- Área de conteúdo dinâmico (renderizado pelo app.js) -->
-    <div id="view">
-      <!-- O conteúdo será injetado aqui pelo JavaScript -->
-    </div>
+    <div id="view"></div>
   </main>
 
-  <!-- Rodapé -->
   <footer class="footer">
     Game Talk Show • projeto familiar supervisionado por Douglas
   </footer>
 
-  <!-- Toast para notificações temporárias -->
   <div id="toast" class="toast hidden"></div>
 
-  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
