@@ -18,9 +18,7 @@ body.login-mode {
   background: linear-gradient(180deg, var(--bg), var(--bg-2));
   overflow: hidden;
 }
-.login-float {
-  position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0;
-}
+.login-float { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
 .float-item {
   position: absolute; left: var(--x); top: var(--y); font-size: var(--s);
   animation: floaty var(--d) ease-in-out var(--delay) infinite alternate;
@@ -141,15 +139,80 @@ body.kitchen-3 .kitchen-counter { background: linear-gradient(180deg, #efe9df, #
 .tag.locked { background: #f5f5f4; color: #57534e; }
 body.kitchen-3 .kitchen-scene { filter: saturate(.75); }
 body.kitchen-1 .kitchen-scene { box-shadow: 0 0 0 3px rgba(245,158,11,.15); }
-.reward-card { display: flex; flex-direction: column; gap: 10px; height: 100%; }
-.reward-price { font-size: 22px; font-weight: 800; color: var(--accent); }
-.reward-desc { color: var(--muted); font-size: 13px; flex: 1; }
-.chef-feedback { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 14px; margin-top: 12px; }
-.chef-feedback h4 { margin: 0 0 8px 0; color: #92400e; display: flex; align-items: center; gap: 6px; }
+
+/* ===== LOJA NOVA ===== */
+.store-category { margin-bottom: 24px; }
+.store-category h4 {
+  margin: 0 0 12px 0; color: var(--accent); font-size: 15px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--line); padding-bottom: 6px;
+}
+.reward-card-new {
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
+  transition: box-shadow .2s ease;
+}
+.reward-card-new:hover { box-shadow: 0 4px 14px rgba(80,50,20,.1); }
+.reward-card-new .reward-img {
+  width: 100%; height: 110px; object-fit: cover; border-radius: 10px;
+  background: #f9f5ef; display: block;
+}
+.reward-card-new .reward-img-fallback {
+  width: 100%; height: 110px; border-radius: 10px;
+  background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+  display: grid; place-items: center; font-size: 48px;
+}
+.reward-card-new h5 { margin: 0; font-size: 15px; color: var(--text); }
+.reward-card-new .reward-desc { color: var(--muted); font-size: 12px; flex: 1; }
+.reward-card-new .reward-price {
+  font-size: 18px; font-weight: 800; color: var(--accent);
+}
+.reward-card-new .reward-price.suggestion { color: var(--warn); font-size: 14px; }
+.reward-card-new .suggestion-badge {
+  display: inline-block; font-size: 10px; padding: 2px 8px;
+  background: #fffbeb; color: #92400e; border-radius: 999px;
+  font-weight: 700; margin-left: 6px;
+}
+.options-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  margin-top: 6px;
+}
+.option-chip {
+  border: 2px solid var(--line); border-radius: 10px; padding: 8px 6px;
+  background: #fff; cursor: pointer; text-align: center;
+  transition: all .15s ease; font-size: 11px; font-weight: 600;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.option-chip:hover { border-color: var(--accent-2); transform: translateY(-1px); }
+.option-chip.selected {
+  border-color: var(--accent); background: #fff4ed;
+  box-shadow: 0 2px 8px rgba(232,106,51,.2);
+}
+.option-chip .opt-emoji { font-size: 22px; }
+.option-chip .opt-label { font-size: 10px; color: var(--muted); line-height: 1.2; }
+.option-chip:disabled { opacity: .4; cursor: not-allowed; }
+.reward-card-new .btn-request { margin-top: 4px; }
+
+/* ===== CATEGORIAS DE PEDIDOS ===== */
+.order-category { margin-bottom: 20px; }
+.order-category h4 {
+  margin: 0 0 10px 0; color: var(--accent); font-size: 14px;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--line); padding-bottom: 4px;
+}
+.order-selected-option {
+  display: inline-block; font-size: 11px; padding: 3px 8px;
+  background: #eff6ff; color: #1e40af; border-radius: 999px;
+  font-weight: 600; margin-top: 4px;
+}
+
+/* ===== RECEITA COLAPSÁVEL ===== */
 .recipe-block { margin-top: 12px; }
 .recipe-block h4 { margin: 0 0 8px; }
 .recipe-block ul, .recipe-block ol { margin: 0; padding-left: 20px; }
 .recipe-block li { margin-bottom: 6px; }
+.chef-feedback { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 14px; margin-top: 12px; }
+.chef-feedback h4 { margin: 0 0 8px 0; color: #92400e; display: flex; align-items: center; gap: 6px; }
 .table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .table th, .table td { text-align: left; padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .table th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
