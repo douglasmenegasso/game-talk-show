@@ -23,14 +23,12 @@ const state = {
   comments: [], lastRecipe: null, selectedOptionByReward: {}
 };
 
-// ===== DADOS DEMO — LOJA REESTRUTURADA =====
 const demoData = {
   playerState: { points_balance: 25, kitchen_level: 2, last_rating: null },
   equipment: [
     { equipment_code: 'batedeira', mode: 'temporary', status: 'active', acquired_at: '2026-11-21T10:00:00-03:00' }
   ],
   rewards: [
-    // ===== NÍVEL 2 — até R$ 10,00 =====
     {
       id: 'r1', code: 'confeitos', name: 'Confeitos', category: 'confeitos',
       description: 'Confeitos coloridos para decorar bolos e biscoitos.',
@@ -96,7 +94,6 @@ const demoData = {
         { id: 'cebolinha', label: 'Cebolinha fresca', emoji: '🌿' }
       ]
     },
-    // ===== NÍVEL 1 — até R$ 30,00 =====
     {
       id: 'r6', code: 'cremes-molhos', name: 'Cremes e Molhos', category: 'cremes-molhos',
       description: 'Cremes e molhos especiais para pratos sofisticados.',
@@ -170,7 +167,6 @@ const demoData = {
         { id: 'vinagre-balsamico', label: 'Balsâmico', emoji: '🍷' }
       ]
     },
-    // ===== SUGESTÕES ACIMA DO VALOR (precisam de aprovação) =====
     {
       id: 'r11', code: 'chocolate-belga', name: 'Chocolate Belga', category: 'sofisticados',
       description: 'Chocolate importado para receitas especiais.',
@@ -327,14 +323,15 @@ function renderPlayer() {
 function renderPlayerDashboard() {
   const ps = state.playerState || { points_balance: 0, kitchen_level: 2 };
   const kitchen = kitchenInfo(ps.kitchen_level); setKitchen(ps.kitchen_level);
-  const recent = (state.missions || []).slice(0, 3).map(m =>
+  const missions = state.missions || [];
+  const recent = missions.slice(0, 3).map(m =>
     '<div class="list-item"><div><div class="title">' + esc(m.title) + '</div><div class="meta">Início: ' + esc(fmtDate(m.occurred_at)) + '</div></div><div class="right"><span class="pill ' + (m.points_delta >= 0 ? 'good' : 'bad') + '">' + (m.points_delta >= 0 ? '+' : '') + esc(m.points_delta) + ' pts</span></div></div>'
   ).join('');
   const suggestions = renderChefSuggestions();
   return '<div class="grid cols-3"><div class="card"><span class="muted small">Saldo</span><div style="font-size:32px;font-weight:800">' + esc(ps.points_balance) + ' pts</div></div>' +
     '<div class="card"><span class="muted small">Cozinha</span><div style="font-size:24px;font-weight:800">' + kitchen.emoji + ' ' + esc(kitchen.name) + '</div></div>' +
     '<div class="card"><span class="muted small">Nível</span><div style="font-size:24px;font-weight:800">' + esc(ps.kitchen_level) + '</div></div></div>' +
-    '<div class="card"><h3 style="margin:0">Sua cozinha</h3>' + renderKitchenScene(ps.kitchen_level, state.equipment) + '</div>' +
+    '<div class="card"><h3 style="margin:0">Sua cozinha</h3>' + renderKitchenScene(ps.kitchen_level, state.equipment || []) + '</div>' +
     suggestions +
     '<div class="card"><h3>Últimas missões</h3><div class="list">' + (recent || '<p class="muted">Nenhuma missão ainda.</p>') + '</div></div>';
 }
@@ -351,7 +348,8 @@ function renderChefSuggestions() {
 }
 
 function renderMissions() {
-  const items = (state.missions || []).map(m => {
+  const missions = state.missions || [];
+  const items = missions.map(m => {
     const isOpen = state.selectedMissionId === m.id;
     const recipeHtml = isOpen && state.recipe ? renderRecipe(state.recipe, false) : '';
     return '<div class="list-item">' +
@@ -381,21 +379,20 @@ function renderRecipe(r, hideGuidance) {
     (equipment.length ? '<div class="mt"><h4>Utensílios</h4><ul>' + equipment.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : '');
 }
 
-// ===== LOJA NOVA =====
+// ===== LOJA COM PROTEÇÕES =====
 function renderStore() {
   const ps = state.playerState || { points_balance: 0, kitchen_level: 2 };
-  const rewards = (state.rewards || []).filter(r => r.active);
+  const rewards = (state.rewards || []).filter(r => r && r.active);
   
-  // Nível 3 bloqueado para ingredientes
   if (ps.kitchen_level === 3) {
     return '<div class="card"><h3>Loja</h3><p class="muted">Na Cozinha de Campanha (Nível 3), o resgate de ingredientes está temporariamente suspenso até a reforma!</p></div>';
   }
 
-  // Agrupa por categoria
   const categories = {};
   rewards.forEach(r => {
-    if (!categories[r.category]) categories[r.category] = [];
-    categories[r.category].push(r);
+    const cat = r.category || 'outros';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(r);
   });
 
   const categoryLabels = {
@@ -422,17 +419,18 @@ function renderStore() {
       const btnDisabled = !canAfford ? 'disabled' : '';
       const btnText = canAfford ? (isAboveMax ? 'Sugerir compra' : 'Pedir resgate') : 'Pontos insuficientes';
       const selectedOpt = state.selectedOptionByReward[r.id];
-      const optionsHtml = r.options.map(opt => 
+      const options = r.options || [];
+      const optionsHtml = options.map(opt => 
         '<div class="option-chip ' + (selectedOpt === opt.id ? 'selected' : '') + '" data-action="select-option" data-reward="' + esc(r.id) + '" data-option="' + esc(opt.id) + '">' +
-          '<span class="opt-emoji">' + esc(opt.emoji) + '</span>' +
+          '<span class="opt-emoji">' + esc(opt.emoji || '🔹') + '</span>' +
           '<span class="opt-label">' + esc(opt.label) + '</span>' +
         '</div>'
       ).join('');
       
       html += '<div class="reward-card-new">' +
-        (r.image_url ? '<img class="reward-img" src="' + esc(r.image_url) + '" alt="' + esc(r.name) + '" onerror="this.outerHTML=\'<div class=\\\'reward-img-fallback\\\'>' + esc(r.emoji) + '</div>\'">' : '<div class="reward-img-fallback">' + esc(r.emoji) + '</div>') +
+        (r.image_url ? '<img class="reward-img" src="' + esc(r.image_url) + '" alt="' + esc(r.name) + '" onerror="this.outerHTML=\'<div class=\\\'reward-img-fallback\\\'>' + esc(r.emoji || '🔹') + '</div>\'">' : '<div class="reward-img-fallback">' + esc(r.emoji || '🔹') + '</div>') +
         '<h5>' + esc(r.name) + (isAboveMax ? '<span class="suggestion-badge">sugestão</span>' : '') + '</h5>' +
-        '<div class="reward-desc">' + esc(r.description) + '</div>' +
+        '<div class="reward-desc">' + esc(r.description || '') + '</div>' +
         '<div class="reward-price' + (isAboveMax ? ' suggestion' : '') + '">' + esc(r.base_price) + ' pts' + (isAboveMax ? ' (acima de R$ ' + r.max_price.toFixed(2).replace('.',',') + ')' : '') + '</div>' +
         '<div class="options-grid">' + optionsHtml + '</div>' +
         '<button class="btn btn-request" data-action="request-reward" data-reward="' + esc(r.id) + '" ' + btnDisabled + '>' + btnText + '</button>' +
@@ -472,7 +470,7 @@ function renderPlayerOrders() {
 }
 
 function renderComments() {
-  const comments = state.comments || demoData.comments;
+  const comments = state.comments || demoData.comments || [];
   const commentList = comments.map(c => 
     '<div class="comment-item"><span class="author">' + esc(c.email) + '</span><span class="date">' + esc(fmtDate(c.created_at)) + '</span><div class="text">' + esc(c.message) + '</div></div>'
   ).join('');
@@ -598,7 +596,6 @@ function renderAdminExport() {
     esc(state.exportJson || '') + '</textarea></div></div>';
 }
 
-// ========== DADOS ==========
 async function bootRealSession() {
   if (!client) return;
   const { data: { session } } = await client.auth.getSession();
@@ -632,18 +629,23 @@ async function refreshData() {
 }
 
 function loadDemoData() {
-  if (state.demoRole === 'admin') { state.players = demoData.players; state.summary = demoData.summary; }
-  else {
+  if (state.demoRole === 'admin') { 
+    state.players = demoData.players || []; 
+    state.summary = demoData.summary || { pending_orders: [], recent_missions: [] }; 
+    state.rewards = demoData.rewards || [];
+  } else {
     const pv = parseInt(params.get('preview'), 10);
     const lvl = (pv >= 1 && pv <= 3) ? pv : demoData.playerState.kitchen_level;
     state.playerState = Object.assign({}, demoData.playerState, { kitchen_level: lvl });
-    state.rewards = demoData.rewards; state.missions = demoData.missions;
-    state.orders = demoData.orders; state.equipment = demoData.equipment;
-    state.comments = demoData.comments; state.lastRecipe = demoData.lastRecipe;
+    state.rewards = demoData.rewards || [];
+    state.missions = demoData.missions || [];
+    state.orders = demoData.orders || [];
+    state.equipment = demoData.equipment || [];
+    state.comments = demoData.comments || [];
+    state.lastRecipe = demoData.lastRecipe || null;
   }
 }
 
-// ========== AÇÕES ==========
 async function doAction(action, el) {
   try {
     if (action === 'tab') { state.tab = el.dataset.tab; render(); return; }
@@ -678,7 +680,6 @@ async function doAction(action, el) {
       render();
       return;
     }
-    // NOVA AÇÃO: selecionar opção na loja
     if (action === 'select-option') {
       const rewardId = el.dataset.reward;
       const optionId = el.dataset.option;
@@ -688,23 +689,21 @@ async function doAction(action, el) {
     }
     if (action === 'request-reward') {
       const rewardId = el.dataset.reward;
-      const reward = state.rewards.find(r => r.id === rewardId);
+      const reward = (state.rewards || []).find(r => r.id === rewardId);
       if (!reward) { toast('Recompensa não encontrada.', 'error'); return; }
       
       const ps = state.playerState || { points_balance: 0, kitchen_level: 2 };
       if (ps.points_balance < reward.base_price) { toast('Pontos insuficientes!', 'error'); return; }
       
-      // Verifica nível da cozinha
       if (reward.level_required > ps.kitchen_level) {
         toast('Sua cozinha ainda não alcançou o nível necessário.', 'error'); return;
       }
       
-      // Verifica se selecionou uma opção
       const selectedOptId = state.selectedOptionByReward[rewardId];
       if (!selectedOptId) {
         toast('Selecione uma opção antes de pedir o resgate.', 'error'); return;
       }
-      const selectedOpt = reward.options.find(o => o.id === selectedOptId);
+      const selectedOpt = (reward.options || []).find(o => o.id === selectedOptId);
       if (!selectedOpt) { toast('Opção inválida.', 'error'); return; }
       
       const isSuggestion = reward.is_suggestion || reward.base_price > reward.max_price;
