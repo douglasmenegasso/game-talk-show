@@ -109,7 +109,7 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+      .replace(/'/g, '&#039;');
   }
 
   function toast(msg, type) {
@@ -199,27 +199,7 @@
     const demoNotice = state.demo
       ? '<div class="notice">Modo de demonstração: configure <code class="inline">config.js</code> com a URL e a chave publishable do Supabase para usar dados reais.</div>'
       : '';
-    view.innerHTML = `
-      <div class="login-wrap">
-        <div class="card">
-          <div class="login-logo">🍳</div>
-          <h2 class="login-title">Game Talk Show</h2>
-          <p class="login-sub">Cozinhando com a Klara • acompanhe pontos, receitas e recompensas</p>
-          ${demoNotice}
-          <form id="login-form">
-            <div class="field">
-              <label for="email">E-mail</label>
-              <input class="input" id="email" type="email" autocomplete="username" required />
-            </div>
-            <div class="field">
-              <label for="password">Senha</label>
-              <input class="input" id="password" type="password" autocomplete="current-password" required />
-            </div>
-            <button class="btn" type="submit" style="width:100%">Entrar</button>
-          </form>
-          ${demoButtons}
-        </div>
-      </div>`;
+    view.innerHTML = '<div class="login-wrap"><div class="card"><div class="login-logo">🍳</div><h2 class="login-title">Game Talk Show</h2><p class="login-sub">Cozinhando com a Klara • acompanhe pontos, receitas e recompensas</p>' + demoNotice + '<form id="login-form"><div class="field"><label for="email">E-mail</label><input class="input" id="email" type="email" autocomplete="username" required /></div><div class="field"><label for="password">Senha</label><input class="input" id="password" type="password" autocomplete="current-password" required /></div><button class="btn" type="submit" style="width:100%">Entrar</button></form>' + demoButtons + '</div></div>';
     const form = $('#login-form');
     if (form) form.addEventListener('submit', onLogin);
   }
@@ -264,12 +244,12 @@
     const tabs = tabsFor(role);
     if (!tabs.some(t => t[0] === state.tab)) state.tab = tabs[0][0];
     const tabsHtml = tabs.map(([id, label]) =>
-      `<button class="tab ${state.tab === id ? 'active' : ''}" data-action="tab" data-tab="${id}">${esc(label)}</button>`
+      '<button class="tab ' + (state.tab === id ? 'active' : '') + '" data-action="tab" data-tab="' + id + '">' + esc(label) + '</button>'
     ).join('');
     let body = '';
     if (role === 'admin') body = renderAdmin();
     else body = renderPlayer();
-    view.innerHTML = `<div class="tabs">${tabsHtml}</div>${body}`;
+    view.innerHTML = '<div class="tabs">' + tabsHtml + '</div>' + body;
   }
 
   function renderPlayer() {
@@ -286,72 +266,19 @@
     const activeRewards = (state.rewards || []).filter(r => r.active).sort((a, b) => a.base_price - b.base_price);
     const next = activeRewards.find(r => r.base_price > ps.points_balance) || activeRewards[0];
     const pct = next ? Math.min(100, Math.round((ps.points_balance / next.base_price) * 100)) : 0;
-    const recent = (state.missions || []).slice(0, 3).map(m => `
-      <div class="list-item">
-        <div>
-          <div class="title">${esc(m.title)}</div>
-          <div class="meta">${esc(kindLabel(m.kind))} • ${esc(fmtDate(m.occurred_at))}</div>
-        </div>
-        <div class="right"><span class="pill ${m.points_delta >= 0 ? 'good' : 'bad'}">${m.points_delta >= 0 ? '+' : ''}${esc(m.points_delta)} pts</span></div>
-      </div>`).join('');
-    return `
-      <div class="grid cols-3">
-        <div class="card stat">
-          <span class="label">Saldo de pontos</span>
-          <span class="value">${esc(ps.points_balance)}</span>
-          <span class="hint">Pontos acumulados para recompensas</span>
-        </div>
-        <div class="card stat">
-          <span class="label">Cozinha atual</span>
-          <span class="value">${kitchen.emoji} ${esc(kitchen.name)}</span>
-          <span class="hint">Nível ${esc(ps.kitchen_level)}</span>
-        </div>
-        <div class="card stat">
-          <span class="label">Próxima recompensa</span>
-          <span class="value" style="font-size:20px">${next ? esc(next.name) : 'Sem recompensas ativas'}</span>
-          <span class="hint">${next ? esc(next.base_price) + ' pontos' : ''}</span>
-          <div class="progress mt"><span style="width:${pct}%"></span></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="kitchen-title">
-          <h3 style="margin:0">Sua cozinha</h3>
-          <span class="pill info">Briefing de equipamentos</span>
-        </div>
-        <div class="kitchen-scene">
-          <div class="kitchen-items">
-            ${kitchen.items.map(i => `<span class="item-chip">${esc(i)}</span>`).join('')}
-          </div>
-        </div>
-        <p class="muted small mt">Antes de cada receita, o Chefe Triix informa quais utensílios podem ser usados. Elétricos permanentes só na Cozinha Master.</p>
-      </div>
-      <div class="card">
-        <h3>Últimas missões</h3>
-        <div class="list">${recent || '<p class="muted">Nenhuma missão ainda.</p>'}</div>
-      </div>`;
+    const recent = (state.missions || []).slice(0, 3).map(m =>
+      '<div class="list-item"><div><div class="title">' + esc(m.title) + '</div><div class="meta">' + esc(kindLabel(m.kind)) + ' • ' + esc(fmtDate(m.occurred_at)) + '</div></div><div class="right"><span class="pill ' + (m.points_delta >= 0 ? 'good' : 'bad') + '">' + (m.points_delta >= 0 ? '+' : '') + esc(m.points_delta) + ' pts</span></div></div>'
+    ).join('');
+    return '<div class="grid cols-3"><div class="card stat"><span class="label">Saldo de pontos</span><span class="value">' + esc(ps.points_balance) + '</span><span class="hint">Pontos acumulados para recompensas</span></div><div class="card stat"><span class="label">Cozinha atual</span><span class="value">' + kitchen.emoji + ' ' + esc(kitchen.name) + '</span><span class="hint">Nível ' + esc(ps.kitchen_level) + '</span></div><div class="card stat"><span class="label">Próxima recompensa</span><span class="value" style="font-size:20px">' + (next ? esc(next.name) : 'Sem recompensas ativas') + '</span><span class="hint">' + (next ? esc(next.base_price) + ' pontos' : '') + '</span><div class="progress mt"><span style="width:' + pct + '%"></span></div></div></div><div class="card"><div class="kitchen-title"><h3 style="margin:0">Sua cozinha</h3><span class="pill info">Briefing de equipamentos</span></div><div class="kitchen-scene"><div class="kitchen-items">' + kitchen.items.map(i => '<span class="item-chip">' + esc(i) + '</span>').join('') + '</div></div><p class="muted small mt">Antes de cada receita, o Chefe Triix informa quais utensílios podem ser usados. Elétricos permanentes só na Cozinha Master.</p></div><div class="card"><h3>Últimas missões</h3><div class="list">' + (recent || '<p class="muted">Nenhuma missão ainda.</p>') + '</div></div>';
   }
 
   function renderMissions() {
-    const items = (state.missions || []).map(m => `
-      <div class="list-item">
-        <div>
-          <div class="title">${esc(m.title)}</div>
-          <div class="meta">${esc(kindLabel(m.kind))} • ${esc(fmtDate(m.occurred_at))}</div>
-          ${m.feedback ? `<div class="meta">${esc(m.feedback)}</div>` : ''}
-        </div>
-        <div class="right">
-          <span class="pill ${m.points_delta >= 0 ? 'good' : 'bad'}">${m.points_delta >= 0 ? '+' : ''}${esc(m.points_delta)} pts</span>
-          <div class="mt"><button class="btn small secondary" data-action="view-recipe" data-id="${esc(m.id)}">Ver receita</button></div>
-        </div>
-      </div>`).join('');
+    const items = (state.missions || []).map(m =>
+      '<div class="list-item"><div><div class="title">' + esc(m.title) + '</div><div class="meta">' + esc(kindLabel(m.kind)) + ' • ' + esc(fmtDate(m.occurred_at)) + '</div>' + (m.feedback ? '<div class="meta">' + esc(m.feedback) + '</div>' : '') + '</div><div class="right"><span class="pill ' + (m.points_delta >= 0 ? 'good' : 'bad') + '">' + (m.points_delta >= 0 ? '+' : '') + esc(m.points_delta) + ' pts</span><div class="mt"><button class="btn small secondary" data-action="view-recipe" data-id="' + esc(m.id) + '">Ver receita</button></div></div></div>'
+    ).join('');
     let recipeHtml = '';
     if (state.selectedMissionId && state.recipe) recipeHtml = renderRecipe(state.recipe);
-    return `
-      <div class="card">
-        <h3>Histórico de missões</h3>
-        <div class="list">${items || '<p class="muted">Nenhuma missão registrada.</p>'}</div>
-      </div>
-      ${recipeHtml}`;
+    return '<div class="card"><h3>Histórico de missões</h3><div class="list">' + (items || '<p class="muted">Nenhuma missão registrada.</p>') + '</div></div>' + recipeHtml;
   }
 
   function renderRecipe(r) {
@@ -362,52 +289,17 @@
     const equipment = r.equipment || [];
     const steps = recipe.steps || [];
     const safety = recipe.safety || [];
-    return `
-      <div class="card">
-        <h3>${esc(recipe.title || 'Receita')}</h3>
-        ${recipe.yield ? `<p class="muted small">Rendimento: ${esc(recipe.yield)}</p>` : ''}
-        <div class="recipe-block">
-          <h4>Ingredientes</h4>
-          <ul>${ingredients.map(i => `<li>${esc(i.quantity || '')} ${esc(i.unit || '')} de ${esc(i.item || '')}${i.note ? ' — ' + esc(i.note) : ''}</li>`).join('')}</ul>
-        </div>
-        <div class="recipe-block">
-          <h4>Modo de preparo</h4>
-          <ol>${steps.map(s => `<li>${esc(s.text || s)}</li>`).join('')}</ol>
-        </div>
-        <div class="recipe-block">
-          <h4>Dicas do Chefe Triix</h4>
-          <ul>${tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
-        </div>
-        ${equipment.length ? `<div class="recipe-block"><h4>Utensílios</h4><ul>${equipment.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div>` : ''}
-        ${products.length ? `<div class="recipe-block"><h4>Produtos usados</h4><ul>${products.map(p => `<li>${esc(p.name)}${p.brand ? ' — ' + esc(p.brand) : ''}${p.note ? ' — ' + esc(p.note) : ''}</li>`).join('')}</ul></div>` : ''}
-        ${safety.length ? `<div class="recipe-block"><h4>Segurança</h4><ul>${safety.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>` : ''}
-      </div>`;
+    return '<div class="card"><h3>' + esc(recipe.title || 'Receita') + '</h3>' + (recipe.yield ? '<p class="muted small">Rendimento: ' + esc(recipe.yield) + '</p>' : '') + '<div class="recipe-block"><h4>Ingredientes</h4><ul>' + ingredients.map(i => '<li>' + esc(i.quantity || '') + ' ' + esc(i.unit || '') + ' de ' + esc(i.item || '') + (i.note ? ' — ' + esc(i.note) : '') + '</li>').join('') + '</ul></div><div class="recipe-block"><h4>Modo de preparo</h4><ol>' + steps.map(s => '<li>' + esc(s.text || s) + '</li>').join('') + '</ol></div><div class="recipe-block"><h4>Dicas do Chefe Triix</h4><ul>' + tips.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>' + (equipment.length ? '<div class="recipe-block"><h4>Utensílios</h4><ul>' + equipment.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : '') + (products.length ? '<div class="recipe-block"><h4>Produtos usados</h4><ul>' + products.map(p => '<li>' + esc(p.name) + (p.brand ? ' — ' + esc(p.brand) : '') + (p.note ? ' — ' + esc(p.note) : '') + '</li>').join('') + '</ul></div>' : '') + (safety.length ? '<div class="recipe-block"><h4>Segurança</h4><ul>' + safety.map(s => '<li>' + esc(s) + '</li>').join('') + '</ul></div>' : '') + '</div>';
   }
 
   function renderStore() {
     const rewards = (state.rewards || []).filter(r => r.active);
     const cards = rewards.map(r => {
       const isEquip = r.reward_type === 'equipment';
-      const modeSelect = isEquip ? `
-        <div class="field">
-          <label>Modo</label>
-          <select id="mode-${esc(r.code)}">
-            <option value="temporary">Temporário por tarefa</option>
-            <option value="permanent">Permanente</option>
-          </select>
-        </div>` : '';
-      return `
-        <div class="card reward-card">
-          <h3 style="margin:0">${esc(r.name)}</h3>
-          <div class="reward-price">${esc(r.base_price)} pts</div>
-          <div class="reward-desc">${esc(r.description || '')}</div>
-          ${modeSelect}
-          <button class="btn" data-action="request-reward" data-code="${esc(r.code)}" data-type="${esc(r.reward_type)}">Pedir recompensa</button>
-        </div>`;
+      const modeSelect = isEquip ? '<div class="field"><label>Modo</label><select id="mode-' + esc(r.code) + '"><option value="temporary">Temporário por tarefa</option><option value="permanent">Permanente</option></select></div>' : '';
+      return '<div class="card reward-card"><h3 style="margin:0">' + esc(r.name) + '</h3><div class="reward-price">' + esc(r.base_price) + ' pts</div><div class="reward-desc">' + esc(r.description || '') + '</div>' + modeSelect + '<button class="btn" data-action="request-reward" data-code="' + esc(r.code) + '" data-type="' + esc(r.reward_type) + '">Pedir recompensa</button></div>';
     }).join('');
-    return `
-      <div class="notice ok">Pedidos ficam pendentes até o Douglas aprovar. Pontos só são descontados na aprovação.</div>
-      <div class="grid cols-2">${cards || '<div class="card"><p class="muted">Nenhuma recompensa ativa.</p></div>'}</div>`;
+    return '<div class="notice ok">Pedidos ficam pendentes até o Douglas aprovar. Pontos só são descontados na aprovação.</div><div class="grid cols-2">' + (cards || '<div class="card"><p class="muted">Nenhuma recompensa ativa.</p></div>') + '</div>';
   }
 
   function rewardNameById(id) {
@@ -416,19 +308,10 @@
   }
 
   function renderPlayerOrders() {
-    const rows = (state.orders || []).map(o => `
-      <div class="list-item">
-        <div>
-          <div class="title">${esc(rewardNameById(o.reward_id))}</div>
-          <div class="meta">${esc(fmtDate(o.created_at))} • ${esc(o.requested_price)} pts${o.mode ? ' • ' + esc(o.mode) : ''}</div>
-          ${o.notes ? `<div class="meta">${esc(o.notes)}</div>` : ''}
-        </div>
-        <div class="right">
-          ${statusPill(o.status)}
-          ${o.status === 'pending' ? `<div class="mt"><button class="btn small bad" data-action="cancel-order" data-id="${esc(o.id)}">Cancelar</button></div>` : ''}
-        </div>
-      </div>`).join('');
-    return `<div class="card"><h3>Meus pedidos</h3><div class="list">${rows || '<p class="muted">Nenhum pedido ainda.</p>'}</div></div>`;
+    const rows = (state.orders || []).map(o =>
+      '<div class="list-item"><div><div class="title">' + esc(rewardNameById(o.reward_id)) + '</div><div class="meta">' + esc(fmtDate(o.created_at)) + ' • ' + esc(o.requested_price) + ' pts' + (o.mode ? ' • ' + esc(o.mode) : '') + '</div>' + (o.notes ? '<div class="meta">' + esc(o.notes) + '</div>' : '') + '</div><div class="right">' + statusPill(o.status) + (o.status === 'pending' ? '<div class="mt"><button class="btn small bad" data-action="cancel-order" data-id="' + esc(o.id) + '">Cancelar</button></div>' : '') + '</div></div>'
+    ).join('');
+    return '<div class="card"><h3>Meus pedidos</h3><div class="list">' + (rows || '<p class="muted">Nenhum pedido ainda.</p>') + '</div></div>';
   }
 
   function renderAdmin() {
@@ -449,46 +332,10 @@
     const summary = state.summary || {};
     const pending = summary.pending_orders || [];
     const recent = summary.recent_missions || [];
-    const playerRows = players.map(p => `
-      <tr>
-        <td>${esc(p.display_name)}</td>
-        <td>${esc(p.points_balance)}</td>
-        <td>${esc(p.kitchen_level)}</td>
-        <td>${p.last_rating == null ? '—' : esc(p.last_rating)}</td>
-      </tr>`).join('');
-    const pendingRows = pending.map(o => `
-      <div class="list-item">
-        <div>
-          <div class="title">${esc(o.reward_name)}</div>
-          <div class="meta">${esc(playerNameById(o.player_id))} • ${esc(o.requested_price)} pts${o.mode ? ' • ' + esc(o.mode) : ''}</div>
-        </div>
-        <div class="right">${statusPill('pending')}</div>
-      </div>`).join('');
-    const recentRows = recent.map(m => `
-      <div class="list-item">
-        <div>
-          <div class="title">${esc(m.title)}</div>
-          <div class="meta">${esc(playerNameById(m.player_id))} • ${esc(fmtDate(m.occurred_at))}</div>
-        </div>
-        <div class="right"><span class="pill ${m.points_delta >= 0 ? 'good' : 'bad'}">${m.points_delta >= 0 ? '+' : ''}${esc(m.points_delta)} pts</span></div>
-      </div>`).join('');
-    return `
-      <div class="grid cols-3">
-        <div class="card stat"><span class="label">Jogadores</span><span class="value">${esc(players.length)}</span></div>
-        <div class="card stat"><span class="label">Pedidos pendentes</span><span class="value">${esc(pending.length)}</span></div>
-        <div class="card stat"><span class="label">Missões recentes</span><span class="value">${esc(recent.length)}</span></div>
-      </div>
-      <div class="card">
-        <div class="row"><h3 style="margin:0">Jogadores</h3><span class="space"></span><button class="btn small secondary" data-action="admin-refresh">Atualizar</button></div>
-        <table class="table mt">
-          <thead><tr><th>Nome</th><th>Pontos</th><th>Cozinha</th><th>Última nota</th></tr></thead>
-          <tbody>${playerRows || '<tr><td colspan="4" class="muted">Nenhum jogador.</td></tr>'}</tbody>
-        </table>
-      </div>
-      <div class="grid cols-2">
-        <div class="card"><h3>Pedidos pendentes</h3><div class="list">${pendingRows || '<p class="muted">Nenhum pedido pendente.</p>'}</div></div>
-        <div class="card"><h3>Missões recentes</h3><div class="list">${recentRows || '<p class="muted">Nenhuma missão recente.</p>'}</div></div>
-      </div>`;
+    const playerRows = players.map(p => '<tr><td>' + esc(p.display_name) + '</td><td>' + esc(p.points_balance) + '</td><td>' + esc(p.kitchen_level) + '</td><td>' + (p.last_rating == null ? '—' : esc(p.last_rating)) + '</td></tr>').join('');
+    const pendingRows = pending.map(o => '<div class="list-item"><div><div class="title">' + esc(o.reward_name) + '</div><div class="meta">' + esc(playerNameById(o.player_id)) + ' • ' + esc(o.requested_price) + ' pts' + (o.mode ? ' • ' + esc(o.mode) : '') + '</div></div><div class="right">' + statusPill('pending') + '</div></div>').join('');
+    const recentRows = recent.map(m => '<div class="list-item"><div><div class="title">' + esc(m.title) + '</div><div class="meta">' + esc(playerNameById(m.player_id)) + ' • ' + esc(fmtDate(m.occurred_at)) + '</div></div><div class="right"><span class="pill ' + (m.points_delta >= 0 ? 'good' : 'bad') + '">' + (m.points_delta >= 0 ? '+' : '') + esc(m.points_delta) + ' pts</span></div></div>').join('');
+    return '<div class="grid cols-3"><div class="card stat"><span class="label">Jogadores</span><span class="value">' + esc(players.length) + '</span></div><div class="card stat"><span class="label">Pedidos pendentes</span><span class="value">' + esc(pending.length) + '</span></div><div class="card stat"><span class="label">Missões recentes</span><span class="value">' + esc(recent.length) + '</span></div></div><div class="card"><div class="row"><h3 style="margin:0">Jogadores</h3><span class="space"></span><button class="btn small secondary" data-action="admin-refresh">Atualizar</button></div><table class="table mt"><thead><tr><th>Nome</th><th>Pontos</th><th>Cozinha</th><th>Última nota</th></tr></thead><tbody>' + (playerRows || '<tr><td colspan="4" class="muted">Nenhum jogador.</td></tr>') + '</tbody></table></div><div class="grid cols-2"><div class="card"><h3>Pedidos pendentes</h3><div class="list">' + (pendingRows || '<p class="muted">Nenhum pedido pendente.</p>') + '</div></div><div class="card"><h3>Missões recentes</h3><div class="list">' + (recentRows || '<p class="muted">Nenhuma missão recente.</p>') + '</div></div></div>';
   }
 
   function exampleMissionPayload() {
@@ -521,91 +368,28 @@
   }
 
   function renderAdminImport() {
-    const options = (state.players || []).map(p => `<option value="${esc(p.player_id)}">${esc(p.display_name)}</option>`).join('');
-    return `
-      <div class="card">
-        <h3>Importar missão gerada pelo Chefe Triix</h3>
-        <p class="muted small">Cole o JSON da missão. O jogador selecionado será adicionado automaticamente como <code class="inline">player_id</code>.</p>
-        <div class="field">
-          <label for="import-player">Jogador</label>
-          <select id="import-player">${options || '<option value="">Nenhum jogador</option>'}</select>
-        </div>
-        <div class="field">
-          <label for="import-json">JSON da missão</label>
-          <textarea id="import-json" placeholder="Cole aqui o JSON..."></textarea>
-        </div>
-        <div class="row">
-          <button class="btn secondary" data-action="load-example">Carregar exemplo</button>
-          <button class="btn" data-action="admin-import">Importar missão</button>
-        </div>
-      </div>`;
+    const options = (state.players || []).map(p => '<option value="' + esc(p.player_id) + '">' + esc(p.display_name) + '</option>').join('');
+    return '<div class="card"><h3>Importar missão gerada pelo Chefe Triix</h3><p class="muted small">Cole o JSON da missão. O jogador selecionado será adicionado automaticamente como <code class="inline">player_id</code>.</p><div class="field"><label for="import-player">Jogador</label><select id="import-player">' + (options || '<option value="">Nenhum jogador</option>') + '</select></div><div class="field"><label for="import-json">JSON da missão</label><textarea id="import-json" placeholder="Cole aqui o JSON..."></textarea></div><div class="row"><button class="btn secondary" data-action="load-example">Carregar exemplo</button><button class="btn" data-action="admin-import">Importar missão</button></div></div>';
   }
 
   function renderAdminOrders() {
     const pending = (state.summary && state.summary.pending_orders) || [];
     const rows = pending.map(o => {
       const missionInput = o.mode === 'temporary'
-        ? `<div class="field mt"><label>ID da missão para equipamento temporário</label><input class="input" id="mission-${esc(o.order_id)}" placeholder="uuid da missão" /></div>`
+        ? '<div class="field mt"><label>ID da missão para equipamento temporário</label><input class="input" id="mission-' + esc(o.order_id) + '" placeholder="uuid da missão" /></div>'
         : '';
-      return `
-        <div class="card">
-          <div class="row">
-            <div>
-              <h3 style="margin:0">${esc(o.reward_name)}</h3>
-              <div class="meta muted small">${esc(playerNameById(o.player_id))} • ${esc(o.requested_price)} pts${o.mode ? ' • ' + esc(o.mode) : ''} • ${esc(fmtDate(o.created_at))}</div>
-            </div>
-            <span class="space"></span>
-            ${statusPill('pending')}
-          </div>
-          ${o.notes ? `<p class="muted small">${esc(o.notes)}</p>` : ''}
-          ${missionInput}
-          <div class="row mt">
-            <button class="btn good" data-action="admin-approve" data-id="${esc(o.order_id)}" data-mode="${esc(o.mode || '')}">Aprovar</button>
-            <button class="btn bad" data-action="admin-reject" data-id="${esc(o.order_id)}">Recusar</button>
-          </div>
-        </div>`;
+      return '<div class="card"><div class="row"><div><h3 style="margin:0">' + esc(o.reward_name) + '</h3><div class="meta muted small">' + esc(playerNameById(o.player_id)) + ' • ' + esc(o.requested_price) + ' pts' + (o.mode ? ' • ' + esc(o.mode) : '') + ' • ' + esc(fmtDate(o.created_at)) + '</div></div><span class="space"></span>' + statusPill('pending') + '</div>' + (o.notes ? '<p class="muted small">' + esc(o.notes) + '</p>' : '') + missionInput + '<div class="row mt"><button class="btn good" data-action="admin-approve" data-id="' + esc(o.order_id) + '" data-mode="' + esc(o.mode || '') + '">Aprovar</button><button class="btn bad" data-action="admin-reject" data-id="' + esc(o.order_id) + '">Recusar</button></div></div>';
     }).join('');
-    return `
-      <div class="notice ok">Aprovar desconta pontos e registra no histórico. Recusar não altera saldo.</div>
-      ${rows || '<div class="card"><p class="muted">Nenhum pedido pendente.</p></div>'}`;
+    return '<div class="notice ok">Aprovar desconta pontos e registra no histórico. Recusar não altera saldo.</div>' + (rows || '<div class="card"><p class="muted">Nenhum pedido pendente.</p></div>');
   }
 
   function renderAdminAdjust() {
-    const options = (state.players || []).map(p => `<option value="${esc(p.player_id)}">${esc(p.display_name)} — ${esc(p.points_balance)} pts</option>`).join('');
-    return `
-      <div class="card">
-        <h3>Ajustar pontos manualmente</h3>
-        <p class="muted small">Use apenas para correções. O motivo fica registrado no histórico.</p>
-        <div class="field">
-          <label for="adjust-player">Jogador</label>
-          <select id="adjust-player">${options || '<option value="">Nenhum jogador</option>'}</select>
-        </div>
-        <div class="field">
-          <label for="adjust-delta">Pontos (+ ou -)</label>
-          <input class="input" id="adjust-delta" type="number" step="1" placeholder="Ex.: 5 ou -3" />
-        </div>
-        <div class="field">
-          <label for="adjust-reason">Motivo</label>
-          <input class="input" id="adjust-reason" placeholder="Ex.: correção de bônus de limpeza" />
-        </div>
-        <button class="btn" data-action="admin-adjust">Salvar ajuste</button>
-      </div>`;
+    const options = (state.players || []).map(p => '<option value="' + esc(p.player_id) + '">' + esc(p.display_name) + ' — ' + esc(p.points_balance) + ' pts</option>').join('');
+    return '<div class="card"><h3>Ajustar pontos manualmente</h3><p class="muted small">Use apenas para correções. O motivo fica registrado no histórico.</p><div class="field"><label for="adjust-player">Jogador</label><select id="adjust-player">' + (options || '<option value="">Nenhum jogador</option>') + '</select></div><div class="field"><label for="adjust-delta">Pontos (+ ou -)</label><input class="input" id="adjust-delta" type="number" step="1" placeholder="Ex.: 5 ou -3" /></div><div class="field"><label for="adjust-reason">Motivo</label><input class="input" id="adjust-reason" placeholder="Ex.: correção de bônus de limpeza" /></div><button class="btn" data-action="admin-adjust">Salvar ajuste</button></div>';
   }
 
   function renderAdminExport() {
-    return `
-      <div class="card">
-        <h3>Exportar resumo para o Chefe Triix</h3>
-        <p class="muted small">Gere um JSON com saldo, pedidos pendentes, missões recentes e equipamentos ativos. Você pode colar esse resumo no chat para eu consultar o estado atual.</p>
-        <div class="row">
-          <button class="btn" data-action="admin-export">Gerar resumo</button>
-          <button class="btn secondary" data-action="copy-export">Copiar JSON</button>
-        </div>
-        <div class="field mt">
-          <label for="export-json">Resumo</label>
-          <textarea id="export-json" readonly>${esc(state.exportJson || '')}</textarea>
-        </div>
-      </div>`;
+    return '<div class="card"><h3>Exportar resumo para o Chefe Triix</h3><p class="muted small">Gere um JSON com saldo, pedidos pendentes, missões recentes e equipamentos ativos. Você pode colar esse resumo no chat para eu consultar o estado atual.</p><div class="row"><button class="btn" data-action="admin-export">Gerar resumo</button><button class="btn secondary" data-action="copy-export">Copiar JSON</button></div><div class="field mt"><label for="export-json">Resumo</label><textarea id="export-json" readonly>' + esc(state.exportJson || '') + '</textarea></div></div>';
   }
 
   async function bootRealSession() {
@@ -904,6 +688,7 @@
     if (!el) return;
     doAction(el.dataset.action, el);
   });
+
   signoutBtn.addEventListener('click', () => doAction('logout', signoutBtn));
 
   async function init() {
