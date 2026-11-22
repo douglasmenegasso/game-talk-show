@@ -1,0 +1,10 @@
+# Ignorar arquivos sensíveis ou temporários
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+node_modules/
+
+# Opcional: se preferir não commitar o config.js real
+# config.js
