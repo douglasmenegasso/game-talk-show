@@ -1,7 +1,11 @@
 (function () {
 'use strict';
 const cfg = window.GAME_TALK_SHOW_CONFIG || {};
-const configured = Boolean(cfg.supabaseUrl && cfg.supabasePublishableKey && !String(cfg.supabaseUrl).includes('COLE'));
+const configured = Boolean(
+  cfg.supabaseUrl && cfg.supabasePublishableKey &&
+  !String(cfg.supabaseUrl).includes('COLE') &&
+  !String(cfg.supabasePublishableKey).includes('COLE')
+);
 const params = new URLSearchParams(window.location.search);
 const forceDemo = params.get('demo') === '1';
 let client = null;
@@ -175,9 +179,9 @@ function renderPlayerDashboard() {
     '<div class="list-item"><div><div class="title">' + esc(m.title) + '</div><div class="meta">Início: ' + esc(fmtDate(m.occurred_at)) + '</div></div><div class="right"><span class="pill ' + (m.points_delta >= 0 ? 'good' : 'bad') + '">' + (m.points_delta >= 0 ? '+' : '') + esc(m.points_delta) + ' pts</span></div></div>'
   ).join('');
   const suggestions = renderChefSuggestions();
-  return '<div class="grid cols-3"><div class="card"><span class="muted small">Saldo</span><div style="font-size:32px;font-weight:800">' + esc(ps.points_balance) + ' pts</div></div>' +
-    '<div class="card"><span class="muted small">Cozinha</span><div style="font-size:24px;font-weight:800">' + kitchen.emoji + ' ' + esc(kitchen.name) + '</div></div>' +
-    '<div class="card"><span class="muted small">Nível</span><div style="font-size:24px;font-weight:800">' + esc(ps.kitchen_level) + '</div></div></div>' +
+  return '<div class="grid cols-3"><div class="card stat"><span class="label">Saldo</span><span class="value">' + esc(ps.points_balance) + ' pts</span></div>' +
+    '<div class="card stat"><span class="label">Cozinha</span><span class="value">' + kitchen.emoji + ' ' + esc(kitchen.name) + '</span><span class="hint">Nível ' + esc(ps.kitchen_level) + '</span></div>' +
+    '<div class="card stat"><span class="label">Próxima recompensa</span><span class="value" style="font-size:20px">Ingrediente Especial</span><span class="hint">15 pontos</span></div></div>' +
     '<div class="card"><h3 style="margin:0">Sua cozinha</h3>' + renderKitchenScene(ps.kitchen_level, state.equipment) + '</div>' +
     suggestions +
     '<div class="card"><h3>Últimas missões</h3><div class="list">' + (recent || '<p class="muted">Nenhuma missão ainda.</p>') + '</div></div>';
@@ -395,7 +399,6 @@ function renderAdminExport() {
     esc(state.exportJson || '') + '</textarea></div></div>';
 }
 
-// ========== DADOS ==========
 async function bootRealSession() {
   if (!client) return;
   const { data: { session } } = await client.auth.getSession();
@@ -440,7 +443,6 @@ function loadDemoData() {
   }
 }
 
-// ========== AÇÕES ==========
 async function doAction(action, el) {
   try {
     if (action === 'tab') { state.tab = el.dataset.tab; render(); return; }
@@ -580,4 +582,22 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if (!el) return; doAction(el.dataset.action, el);
 });
-document.addEventListener('submit', (e) =>
+document.addEventListener('submit', (e) => {
+  if (e.target.id === 'comment-form') {
+    e.preventDefault();
+    doAction('submit-comment', e.target);
+  }
+});
+signoutBtn.addEventListener('click', () => doAction('logout', signoutBtn));
+
+async function init() {
+  if (forceDemo) { loadDemoData(); render(); return; }
+  if (!configured) { loadDemoData(); render(); return; }
+  if (!client) { toast('Erro ao carregar Supabase.', 'error'); return; }
+  try {
+    await bootRealSession();
+    client.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') { state.user = null; state.profile = null; state.role = null; render(); } });
+  } catch (err) { toast('Erro ao iniciar sessão: ' + err.message, 'error'); render(); }
+}
+init();
+})();
