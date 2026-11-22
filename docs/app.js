@@ -1,11 +1,7 @@
 (function () {
 'use strict';
 const cfg = window.GAME_TALK_SHOW_CONFIG || {};
-const configured = Boolean(
-  cfg.supabaseUrl && cfg.supabasePublishableKey &&
-  !String(cfg.supabaseUrl).includes('COLE') &&
-  !String(cfg.supabasePublishableKey).includes('COLE')
-);
+const configured = Boolean(cfg.supabaseUrl && cfg.supabasePublishableKey && !String(cfg.supabaseUrl).includes('COLE'));
 const params = new URLSearchParams(window.location.search);
 const forceDemo = params.get('demo') === '1';
 let client = null;
@@ -19,7 +15,8 @@ const state = {
   tab: 'dashboard',
   playerState: { points_balance: 0, kitchen_level: 2, last_rating: null },
   players: [], rewards: [], missions: [], orders: [], equipment: [],
-  summary: null, selectedMissionId: null, recipe: null, exportJson: ''
+  summary: null, selectedMissionId: null, recipe: null, exportJson: '',
+  comments: [], lastRecipe: null
 };
 
 const demoData = {
@@ -47,23 +44,27 @@ const demoData = {
     ingredients: [{ item: 'ovos', quantity: '2', unit: 'unidade' }, { item: 'açúcar', quantity: '1', unit: 'xic' }],
     products: [{ name: 'achocolatado', brand: null, note: 'Marca não informada.' }],
     equipment: ['tigela grande', 'fouet', 'forno']
-  }
+  },
+  comments: [
+    { id: 'c1', email: 'tia@familia.com', message: 'Que lindo o projeto da Klara!', created_at: '2026-11-21T16:00:00-03:00' }
+  ],
+  lastRecipe: { title: 'Bolo de chocolate com calda', ingredients: ['ovos', 'açúcar', 'leite', 'óleo', 'achocolatado'] }
 };
 
 const LOGIN_FLOATS = [
-  { e: '🍅', x: '5%',  y: '15%', s: '34px', d: '6s',   delay: '0s' },
-  { e: '🥄', x: '15%', y: '70%', s: '30px', d: '7s',   delay: '-2s' },
+  { e: '🍅', x: '5%', y: '15%', s: '34px', d: '6s', delay: '0s' },
+  { e: '🥄', x: '15%', y: '70%', s: '30px', d: '7s', delay: '-2s' },
   { e: '🍳', x: '85%', y: '20%', s: '38px', d: '6.5s', delay: '-1s' },
-  { e: '🥣', x: '90%', y: '65%', s: '32px', d: '8s',   delay: '-3s' },
-  { e: '✨', x: '30%', y: '30%', s: '22px', d: '5s',   delay: '-1s' },
+  { e: '🥣', x: '90%', y: '65%', s: '32px', d: '8s', delay: '-3s' },
+  { e: '✨', x: '30%', y: '30%', s: '22px', d: '5s', delay: '-1s' },
   { e: '✨', x: '70%', y: '45%', s: '20px', d: '5.5s', delay: '-2s' }
 ];
 
 const EQUIP_META = {
-  'batedeira':      { icon: '⚙️', name: 'Batedeira' },
+  'batedeira': { icon: '⚙️', name: 'Batedeira' },
   'liquidificador': { icon: '🥤', name: 'Liquidificador' },
-  'micro-ondas':    { icon: '⏲️', name: 'Micro-ondas' },
-  'airfryer':       { icon: '🍟', name: 'Airfryer' }
+  'micro-ondas': { icon: '⏲️', name: 'Micro-ondas' },
+  'airfryer': { icon: '🍟', name: 'Airfryer' }
 };
 
 const $ = (s) => document.querySelector(s);
@@ -148,7 +149,7 @@ async function onLogin(e) {
 
 function tabsFor(role) {
   if (role === 'admin') return [['dashboard', 'Visão geral'], ['import', 'Importar'], ['orders', 'Pedidos'], ['adjust', 'Ajustar'], ['export', 'Exportar']];
-  return [['dashboard', 'Cozinha'], ['missions', 'Missões'], ['store', 'Loja'], ['orders', 'Meus Pedidos']];
+  return [['dashboard', 'Cozinha'], ['missions', 'Missões'], ['store', 'Loja'], ['orders', 'Meus Pedidos'], ['comments', 'Comentários']];
 }
 
 function renderApp() {
@@ -163,6 +164,7 @@ function renderPlayer() {
   if (state.tab === 'missions') return renderMissions();
   if (state.tab === 'store') return renderStore();
   if (state.tab === 'orders') return renderPlayerOrders();
+  if (state.tab === 'comments') return renderComments();
   return renderPlayerDashboard();
 }
 
@@ -172,22 +174,44 @@ function renderPlayerDashboard() {
   const recent = (state.missions || []).slice(0, 3).map(m =>
     '<div class="list-item"><div><div class="title">' + esc(m.title) + '</div><div class="meta">Início: ' + esc(fmtDate(m.occurred_at)) + '</div></div><div class="right"><span class="pill ' + (m.points_delta >= 0 ? 'good' : 'bad') + '">' + (m.points_delta >= 0 ? '+' : '') + esc(m.points_delta) + ' pts</span></div></div>'
   ).join('');
+  const suggestions = renderChefSuggestions();
   return '<div class="grid cols-3"><div class="card"><span class="muted small">Saldo</span><div style="font-size:32px;font-weight:800">' + esc(ps.points_balance) + ' pts</div></div>' +
     '<div class="card"><span class="muted small">Cozinha</span><div style="font-size:24px;font-weight:800">' + kitchen.emoji + ' ' + esc(kitchen.name) + '</div></div>' +
     '<div class="card"><span class="muted small">Nível</span><div style="font-size:24px;font-weight:800">' + esc(ps.kitchen_level) + '</div></div></div>' +
     '<div class="card"><h3 style="margin:0">Sua cozinha</h3>' + renderKitchenScene(ps.kitchen_level, state.equipment) + '</div>' +
+    suggestions +
     '<div class="card"><h3>Últimas missões</h3><div class="list">' + (recent || '<p class="muted">Nenhuma missão ainda.</p>') + '</div></div>';
+}
+
+function renderChefSuggestions() {
+  const suggestions = [
+    'Que tal tentar um bolo de cenoura com cobertura de chocolate? Você já sabe fazer massa de bolo!',
+    'Panquecas doces são ótimas para o café da manhã e usam ingredientes simples.',
+    'Brigadeiro é fácil e você já conhece o processo de mexer no fogo (com adulto).'
+  ];
+  return '<div class="chef-feedback"><h4>👨‍🍳 Sugestões do Chefe Triix</h4><ul>' + 
+    suggestions.map(s => '<li>' + esc(s) + '</li>').join('') + 
+    '</ul><p class="small muted mt"><strong>Bônus:</strong> Seguir uma sugestão de prato novo garante +3 pontos na avaliação final!</p></div>';
 }
 
 function renderMissions() {
   const items = (state.missions || []).map(m => {
-    const recipeHtml = state.selectedMissionId === m.id && state.recipe ? renderRecipe(state.recipe, false) : '';
-    return '<div class="list-item"><div><div class="title">' + esc(m.title) + '</div><div class="meta">Início: ' + esc(fmtDate(m.occurred_at)) + '</div>' + (m.feedback ? '<div class="meta">' + esc(m.feedback) + '</div>' : '') + '</div>' +
-    '<div class="right"><span class="pill ' + (m.points_delta >= 0 ? 'good' : 'bad') + '">' + (m.points_delta >= 0 ? '+' : '') + esc(m.points_delta) + ' pts</span>' +
-    '<div class="recipe-toggle" data-action="toggle-recipe" data-id="' + esc(m.id) + '">' + (state.selectedMissionId === m.id ? 'Recolher receita ▲' : 'Ver receita ▼') + '</div>' +
-    (recipeHtml ? '<div class="recipe-details open">' + recipeHtml + '</div>' : '') + '</div></div>';
+    const isOpen = state.selectedMissionId === m.id;
+    const recipeHtml = isOpen && state.recipe ? renderRecipe(state.recipe, false) : '';
+    return '<div class="list-item">' +
+      '<div><div class="title">' + esc(m.title) + '</div>' +
+      '<div class="meta">Início: ' + esc(fmtDate(m.occurred_at)) + '</div>' +
+      (m.feedback ? '<div class="meta">' + esc(m.feedback) + '</div>' : '') +
+      '</div>' +
+      '<div class="right"><span class="pill ' + (m.points_delta >= 0 ? 'good' : 'bad') + '">' +
+      (m.points_delta >= 0 ? '+' : '') + esc(m.points_delta) + ' pts</span>' +
+      '<div class="recipe-toggle" data-action="toggle-recipe" data-id="' + esc(m.id) + '">' +
+      (isOpen ? 'Recolher receita ▲' : 'Ver receita ▼') + '</div></div>' +
+      (recipeHtml ? '<div class="recipe-details open">' + recipeHtml + '</div>' : '') +
+      '</div>';
   }).join('');
-  return '<div class="card"><h3>Histórico de missões</h3><div class="list">' + (items || '<p class="muted">Nenhuma missão registrada.</p>') + '</div></div>';
+  return '<div class="card"><h3>Histórico de missões</h3><div class="list">' +
+    (items || '<p class="muted">Nenhuma missão registrada.</p>') + '</div></div>';
 }
 
 function renderRecipe(r, hideGuidance) {
@@ -213,7 +237,13 @@ function renderStore() {
     const modeSelect = isEquip ? '<div class="field"><label>Modo</label><select id="mode-' + esc(r.code) + '"><option value="temporary">Temporário (Aluguel)</option><option value="permanent">Permanente (Compra)</option></select></div>' : '';
     const btnDisabled = !canAfford ? 'disabled' : '';
     const btnText = canAfford ? 'Pedir recompensa' : 'Pontos insuficientes';
-    return '<div class="card reward-card"><h3 style="margin:0">' + esc(r.name) + '</h3><div class="reward-price">' + esc(r.base_price) + ' pts</div><div class="reward-desc">' + esc(r.description || '') + '</div>' + modeSelect +
+    let ingredientSelect = '';
+    if (r.code === 'ingrediente-especial') {
+      const lastIngredients = state.lastRecipe?.ingredients || ['ovos', 'açúcar', 'leite', 'óleo', 'achocolatado'];
+      ingredientSelect = '<div class="field"><label>Escolha 1 ingrediente da última receita</label><select id="ingredient-' + esc(r.code) + '">' + 
+        lastIngredients.slice(0, 5).map(ing => '<option value="' + esc(ing) + '">' + esc(ing) + '</option>').join('') + '</select></div>';
+    }
+    return '<div class="card reward-card"><h3 style="margin:0">' + esc(r.name) + '</h3><div class="reward-price">' + esc(r.base_price) + ' pts</div><div class="reward-desc">' + esc(r.description || '') + '</div>' + ingredientSelect + modeSelect + 
     '<button class="btn" data-action="request-reward" data-code="' + esc(r.code) + '" data-type="' + esc(r.reward_type) + '" ' + btnDisabled + '>' + btnText + '</button></div>';
   }).join('');
   return '<div class="notice ok">Pedidos ficam pendentes até o Douglas aprovar. Pontos só são descontados na aprovação.</div><div class="grid cols-2">' + cards + '</div>';
@@ -225,7 +255,7 @@ function renderPlayerOrders() {
   const approved = orders.filter(o => o.status === 'approved');
   const cancelled = orders.filter(o => o.status === 'cancelled');
   const equipmentHistory = state.equipment || [];
-  const renderList = (list) => list.length ? list.map(o =>
+  const renderList = (list) => list.length ? list.map(o => 
     '<div class="list-item"><div><div class="title">' + esc(o.reward_name || 'Item') + '</div><div class="meta">' + esc(fmtDate(o.created_at)) + ' • ' + esc(o.requested_price) + ' pts' + (o.mode ? ' • ' + esc(o.mode) : '') + '</div></div><div class="right"><span class="pill ' + (o.status === 'approved' ? 'good' : o.status === 'cancelled' ? 'bad' : 'warn') + '">' + esc(o.status === 'approved' ? 'Aprovado' : o.status === 'cancelled' ? 'Cancelado' : 'Aguardando') + '</span></div></div>'
   ).join('') : '<p class="muted small">Nenhum registro nesta categoria.</p>';
   const equipList = equipmentHistory.length ? equipmentHistory.map(e => {
@@ -239,7 +269,18 @@ function renderPlayerOrders() {
     '<div class="order-category"><h4>🍳 Meus Utensílios</h4><div class="list">' + equipList + '</div></div></div>';
 }
 
-// ========== ADMIN ==========
+function renderComments() {
+  const comments = state.comments || demoData.comments;
+  const commentList = comments.map(c => 
+    '<div class="comment-item"><span class="author">' + esc(c.email) + '</span><span class="date">' + esc(fmtDate(c.created_at)) + '</span><div class="text">' + esc(c.message) + '</div></div>'
+  ).join('');
+  return '<div class="card"><h3>Comentários de Visitantes</h3><p class="muted small">Deixe seu recado para a Chef Klara!</p>' +
+    '<form class="comment-form" id="comment-form"><div class="field"><label>Seu e-mail</label><input class="input" id="comment-email" type="email" required /></div>' +
+    '<div class="field"><label>Mensagem</label><textarea class="input" id="comment-message" rows="3" required></textarea></div>' +
+    '<button class="btn" type="submit">Enviar comentário</button></form>' +
+    '<div class="comment-list">' + (commentList || '<p class="muted">Nenhum comentário ainda. Seja o primeiro!</p>') + '</div></div>';
+}
+
 function renderAdmin() {
   if (state.tab === 'import') return renderAdminImport();
   if (state.tab === 'orders') return renderAdminOrders();
@@ -296,32 +337,13 @@ function renderAdminDashboard() {
 
 function exampleMissionPayload() {
   return {
-    mission: {
-      kind: 'recipe', title: 'Nova receita', occurred_at: new Date().toISOString(),
-      feedback: 'Feedback da Klara e do Douglas.', rating: null, points_delta: 20,
-      kitchen_level_after: 2,
-      points_breakdown: [
-        { label: 'Execução da receita', points: 10 },
-        { label: 'Limpeza e organização', points: 5 },
-        { label: 'Feedback', points: 5 }
-      ]
-    },
-    recipe: {
-      title: 'Nova receita', yield: 'Informar rendimento',
-      equipment: ['forma média', 'tigela grande'],
-      ingredients: [{ item: 'ingrediente', quantity: '1', unit: 'xic' }],
-      products: [{ name: 'produto', brand: null, note: 'Confirmar rótulo' }],
-      steps: [{ order: 1, text: 'Passo orientado pelo Chefe Triix.' }],
-      safety: ['Tarefas quentes ficam com o adulto.'],
-      tips: ['Esperar a instrução completa antes de executar.']
-    }
+    mission: { kind: 'recipe', title: 'Nova receita', occurred_at: new Date().toISOString(), feedback: 'Feedback da Klara e do Douglas.', rating: null, points_delta: 20, kitchen_level_after: 2, points_breakdown: [{ label: 'Execução da receita', points: 10 }, { label: 'Limpeza e organização', points: 5 }, { label: 'Feedback', points: 5 }] },
+    recipe: { title: 'Nova receita', yield: 'Informar rendimento', equipment: ['forma média', 'tigela grande'], ingredients: [{ item: 'ingrediente', quantity: '1', unit: 'xic' }], products: [{ name: 'produto', brand: null, note: 'Confirmar rótulo' }], steps: [{ order: 1, text: 'Passo orientado pelo Chefe Triix.' }], safety: ['Tarefas quentes ficam com o adulto.'], tips: ['Esperar a instrução completa antes de executar.'] }
   };
 }
 
 function renderAdminImport() {
-  const options = (state.players || []).map(p =>
-    '<option value="' + esc(p.player_id) + '">' + esc(p.display_name) + '</option>'
-  ).join('');
+  const options = (state.players || []).map(p => '<option value="' + esc(p.player_id) + '">' + esc(p.display_name) + '</option>').join('');
   return '<div class="card"><h3>Importar missão gerada pelo Chefe Triix</h3>' +
     '<p class="muted small">Cole o JSON da missão. O jogador selecionado será adicionado automaticamente como <code class="inline">player_id</code>. Dicas e segurança ficam salvas no banco, mas não aparecem para a Klara.</p>' +
     '<div class="field"><label for="import-player">Jogador</label><select id="import-player">' +
@@ -414,6 +436,7 @@ function loadDemoData() {
     state.playerState = Object.assign({}, demoData.playerState, { kitchen_level: lvl });
     state.rewards = demoData.rewards; state.missions = demoData.missions;
     state.orders = demoData.orders; state.equipment = demoData.equipment;
+    state.comments = demoData.comments; state.lastRecipe = demoData.lastRecipe;
   }
 }
 
@@ -428,9 +451,29 @@ async function doAction(action, el) {
       state.user = null; state.profile = null; state.role = null; render(); return;
     }
     if (action === 'toggle-recipe') {
-      state.selectedMissionId = state.selectedMissionId === el.dataset.id ? null : el.dataset.id;
-      if (state.selectedMissionId && isDemoActive()) state.recipe = demoData.recipe;
-      render(); return;
+      const id = el.dataset.id;
+      if (state.selectedMissionId === id) {
+        state.selectedMissionId = null;
+        state.recipe = null;
+        render();
+        return;
+      }
+      state.selectedMissionId = id;
+      state.recipe = null;
+      if (isDemoActive()) {
+        state.recipe = demoData.recipe;
+      } else {
+        const { data, error } = await client
+          .from('mission_recipes')
+          .select('*')
+          .eq('mission_id', id)
+          .maybeSingle();
+        if (error) throw error;
+        state.recipe = data || null;
+        if (!data) toast('Esta missão não tem receita vinculada.', 'error');
+      }
+      render();
+      return;
     }
     if (action === 'request-reward') {
       const ps = state.playerState || { points_balance: 0 };
@@ -440,8 +483,12 @@ async function doAction(action, el) {
         toast('Cozinha Nível 3 não pode adquirir utensílios no momento.', 'error'); return;
       }
       const mode = reward.reward_type === 'equipment' ? document.getElementById('mode-' + el.dataset.code)?.value || 'temporary' : null;
-      if (isDemoActive()) { toast('Demo: pedido enviado!', 'ok'); return; }
-      const { error } = await client.rpc('player_request_reward', { p_reward_code: el.dataset.code, p_note: 'Pedido via site', p_mode: mode });
+      const ingredient = reward.code === 'ingrediente-especial' ? document.getElementById('ingredient-' + el.dataset.code)?.value : null;
+      if (isDemoActive()) { 
+        toast('Demo: pedido enviado! (ingrediente: ' + (ingredient || 'N/A') + ')', 'ok'); 
+        return; 
+      }
+      const { error } = await client.rpc('player_request_reward', { p_reward_code: el.dataset.code, p_note: 'Ingrediente: ' + (ingredient || 'N/A'), p_mode: mode });
       if (error) throw error;
       await refreshData(); state.tab = 'orders'; render();
       toast('Pedido enviado para aprovação do Douglas!', 'ok');
@@ -512,6 +559,20 @@ async function doAction(action, el) {
       catch (_) { const ta = $('#export-json'); if (ta) { ta.select(); document.execCommand('copy'); toast('JSON copiado.', 'ok'); } }
       return;
     }
+    if (action === 'submit-comment') {
+      const email = $('#comment-email').value.trim();
+      const message = $('#comment-message').value.trim();
+      if (!email || !message) { toast('Preencha e-mail e mensagem.', 'error'); return; }
+      if (isDemoActive()) {
+        state.comments.unshift({ id: 'c' + Date.now(), email, message, created_at: new Date().toISOString() });
+        render(); toast('Comentário enviado! (demo)', 'ok');
+        return;
+      }
+      const { error } = await client.from('visitor_comments').insert({ email, message });
+      if (error) throw error;
+      await refreshData(); render(); toast('Comentário enviado!', 'ok');
+      return;
+    }
   } catch (err) { toast(err.message || 'Erro na ação.', 'error'); }
 }
 
@@ -519,16 +580,4 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if (!el) return; doAction(el.dataset.action, el);
 });
-signoutBtn.addEventListener('click', () => doAction('logout', signoutBtn));
-
-async function init() {
-  if (forceDemo) { loadDemoData(); render(); return; }
-  if (!configured) { loadDemoData(); render(); return; }
-  if (!client) { toast('Erro ao carregar Supabase.', 'error'); return; }
-  try {
-    await bootRealSession();
-    client.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') { state.user = null; state.profile = null; state.role = null; render(); } });
-  } catch (err) { toast('Erro ao iniciar sessão: ' + err.message, 'error'); render(); }
-}
-init();
-})();
+document.addEventListener('submit', (e) =>
