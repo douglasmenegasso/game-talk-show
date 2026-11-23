@@ -470,9 +470,15 @@ async function refreshData() {
     const cats = catRes.data || [];
     state.storeCategories = cats;
     const itemsByCat = {};
+    // Carrega itens de cada categoria com tratamento de erro
     await Promise.all(cats.map(async c => {
-      const { data } = await client.rpc('store_list_items', { p_category_id: c.id });
-      itemsByCat[c.id] = data || [];
+      try {
+        const { data } = await client.rpc('store_list_items', { p_category_id: c.id });
+        itemsByCat[c.id] = data || [];
+      } catch (err) {
+        console.warn('Erro ao carregar itens da categoria', c.code, err);
+        itemsByCat[c.id] = [];
+      }
     }));
     state.storeItemsByCategory = itemsByCat;
   }
