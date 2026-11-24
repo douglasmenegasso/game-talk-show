@@ -21,7 +21,18 @@ body.kitchen-2 {
 body.kitchen-3 {
   background: linear-gradient(rgba(243,240,235,.55), rgba(231,224,214,.6)), url('assets/kitchen-3.jpg') center/cover fixed no-repeat;
 }
+/* ===== LOGIN: fundo com a logo grande visível + sem barra cobrindo ===== */
 body.login-mode {
+  background:
+    linear-gradient(rgba(255,248,239,.55), rgba(255,239,217,.78)),
+    url('assets/login-bg.jpg') center top / cover no-repeat;
+}
+/* Esconde a topbar no login (ela não tem conteúdo útil ali e cobria a logo) */
+body.login-mode .topbar { display: none; }
+/* O rodapé sobe um pouco e fica legível sobre o fundo */
+body.login-mode .footer { padding-top: 8px; }
+/* A janela de login desce o suficiente para deixar a logo respirar */
+.login-wrap { max-width: 460px; margin: 14vh auto 40px; position: relative; z-index: 5; } {
   background: linear-gradient(rgba(255,248,239,.4), rgba(255,239,217,.55)), url('assets/login-bg.jpg') center/cover fixed no-repeat;
 }
 .container { max-width: 1100px; margin: 0 auto; padding: 18px; position: relative; z-index: 2; }
