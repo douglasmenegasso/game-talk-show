@@ -96,7 +96,9 @@ function kitchenBase(level) {
 function renderKitchenScene(level, equipment) {
   const base = kitchenBase(level);
   const wall = base.wall.map(w => '<span>' + w + '</span>').join('');
-  const items = base.items.map(i => '<div class="utensil"><span class="icon">' + i.icon + '</span><span class="name">' + esc(i.name) + '</span></div>').join('');
+  const items = base.items.map(i =>
+    '<div class="utensil"><span class="icon">' + i.icon + '</span><span class="name">' + esc(i.name) + '</span></div>'
+  ).join('');
   const extra = (equipment || []).map(e => {
     const meta = EQUIP_META[e.equipment_code] || { icon: '🔌', name: e.equipment_code };
     let tag = '', cls = '';
@@ -106,7 +108,21 @@ function renderKitchenScene(level, equipment) {
     else { tag = '<span class="tag locked">Guardado</span>'; cls = ' locked'; }
     return '<div class="utensil equip' + cls + '"><span class="icon">' + meta.icon + '</span><span class="name">' + esc(meta.name) + '</span>' + tag + '</div>';
   }).join('');
-  return '<div class="kitchen-scene"><div class="kitchen-wall">' + wall + '</div><div class="kitchen-counter">' + items + extra + '</div></div>';
+
+  // Lista de utensílios disponíveis (sem os bloqueados)
+  const availableItems = base.items.map(i => i.name).join(', ');
+  const availableEquips = (equipment || [])
+    .filter(e => !(level === 3 && e.mode === 'temporary') && !(e.mode === 'permanent' && level !== 1))
+    .map(e => {
+      const meta = EQUIP_META[e.equipment_code] || { name: e.equipment_code };
+      return meta.name;
+    })
+    .join(', ');
+  const availableList = [availableItems, availableEquips].filter(s => s).join(' • ');
+
+  return '<div class="kitchen-scene"><div class="kitchen-wall">' + wall + '</div><div class="kitchen-counter">' + items + extra + '</div>' +
+    '<div style="padding:10px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)">' +
+    '<strong>✅ Disponíveis para receitas:</strong> ' + (availableList || 'Nenhum') + '</div></div>';
 }
 function setKitchen(level) { document.body.classList.remove('kitchen-1', 'kitchen-2', 'kitchen-3'); document.body.classList.add('kitchen-' + (level || 2)); }
 function isDemoActive() { return state.demo && state.demoRole; }
