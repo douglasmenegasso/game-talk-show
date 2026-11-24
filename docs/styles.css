@@ -11,7 +11,8 @@ body {
   color: var(--text); min-height: 100vh;
   background: linear-gradient(180deg, var(--bg), var(--bg-2)) fixed;
 }
-/* ===== FUNDOS POR NÍVEL ===== */
+
+/* ===== FUNDOS POR NÍVEL DE COZINHA ===== */
 body.kitchen-1 {
   background: linear-gradient(rgba(255,247,220,.45), rgba(255,230,170,.55)), url('assets/kitchen-1.jpg') center/cover fixed no-repeat;
 }
@@ -21,22 +22,20 @@ body.kitchen-2 {
 body.kitchen-3 {
   background: linear-gradient(rgba(243,240,235,.55), rgba(231,224,214,.6)), url('assets/kitchen-3.jpg') center/cover fixed no-repeat;
 }
-/* ===== LOGIN: fundo com a logo grande visível + sem barra cobrindo ===== */
+
+/* ===== FUNDO DA TELA DE LOGIN — LOGO GRANDE NO TOPO ===== */
 body.login-mode {
+  /* A imagem fica ancorada pelo TOPO (center top) para a logo sempre aparecer */
   background:
     linear-gradient(rgba(255,248,239,.55), rgba(255,239,217,.78)),
     url('assets/login-bg.jpg') center top / cover no-repeat;
+  /* Esconde a topbar no login (ela não tem conteúdo útil ali e cobria a logo) */
 }
-/* Esconde a topbar no login (ela não tem conteúdo útil ali e cobria a logo) */
 body.login-mode .topbar { display: none; }
-/* O rodapé sobe um pouco e fica legível sobre o fundo */
-body.login-mode .footer { padding-top: 8px; }
-/* A janela de login desce o suficiente para deixar a logo respirar */
-.login-wrap { max-width: 460px; margin: 14vh auto 40px; position: relative; z-index: 5; } {
-  background: linear-gradient(rgba(255,248,239,.4), rgba(255,239,217,.55)), url('assets/login-bg.jpg') center/cover fixed no-repeat;
-}
+
 .container { max-width: 1100px; margin: 0 auto; padding: 18px; position: relative; z-index: 2; }
 .hidden { display: none !important; }
+
 .topbar {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
   padding: 12px 18px; background: rgba(255,255,255,.72); backdrop-filter: blur(10px);
@@ -48,6 +47,7 @@ body.login-mode .footer { padding-top: 8px; }
 .brand p { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
 .topbar-right { display: flex; align-items: center; gap: 8px; }
 .badge { padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.8); border: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+
 .btn { border: none; cursor: pointer; border-radius: 12px; padding: 10px 14px; background: var(--accent); color: #fff; font-weight: 600; font-size: 14px; transition: transform .05s, opacity .2s; }
 .btn:hover { opacity: .94; } .btn:active { transform: translateY(1px); }
 .btn.secondary { background: rgba(255,255,255,.9); color: var(--text); border: 1px solid var(--line); }
@@ -55,25 +55,49 @@ body.login-mode .footer { padding-top: 8px; }
 .btn.good { background: var(--good); } .btn.bad { background: var(--bad); } .btn.warn { background: var(--warn); }
 .btn.small { padding: 7px 10px; font-size: 12px; border-radius: 10px; }
 .btn:disabled { opacity: .5; cursor: not-allowed; filter: grayscale(.5); }
+
 /* ===== CARDS TRANSLÚCIDOS ===== */
 .card { background: var(--card); backdrop-filter: blur(8px); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 14px; }
 .card h2, .card h3 { margin-top: 0; }
 .grid { display: grid; gap: 14px; }
 .grid.cols-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
 .grid.cols-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+
 /* ===== LOGIN ===== */
 .login-float { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
 .float-item { position: absolute; left: var(--x); top: var(--y); font-size: var(--s); animation: floaty var(--d) ease-in-out var(--delay) infinite alternate; opacity: .85; filter: drop-shadow(0 6px 8px rgba(120,70,20,.15)); }
 @keyframes floaty { from { transform: translateY(0) rotate(-8deg); } to { transform: translateY(-40px) rotate(10deg); } }
-.login-wrap { max-width: 460px; margin: 120px auto 40px; position: relative; z-index: 5; }
-.login-card { background: rgba(255,255,255,.68); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.5); padding: 28px 24px; }
+
+/* CARD DE LOGIN — empurrado para baixo para liberar a logo do fundo */
+.login-wrap {
+  max-width: 460px;
+  margin: 28vh auto 40px;  /* 28vh = empurra o card para baixo, liberando a logo */
+  position: relative;
+  z-index: 5;
+}
+.login-card {
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.5);
+  padding: 28px 24px;
+}
 .login-logo-wrap { text-align: center; margin-bottom: 16px; position: relative; z-index: 6; }
-.login-logo-img { display: block; width: 140px; height: 140px; margin: 0 auto 12px; border-radius: 28px; box-shadow: 0 8px 24px rgba(80,50,20,.15); background: rgba(255,255,255,.9); padding: 8px; }
+.login-logo-img {
+  display: block;
+  width: 140px; height: 140px;
+  margin: 0 auto 12px;
+  border-radius: 28px;
+  box-shadow: 0 8px 24px rgba(80,50,20,.15);
+  background: rgba(255,255,255,.9);
+  padding: 8px;
+}
 .login-title { text-align: center; margin: 0 0 6px; }
 .login-sub { text-align: center; color: var(--muted); margin: 0 0 18px; font-size: 14px; }
+
 .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .field label { font-size: 13px; color: var(--muted); font-weight: 600; }
-/* ===== CAMPOS DE DIGITAÇÃO (corrigidos) ===== */
+
+/* ===== CAMPOS DE DIGITAÇÃO — com contraste visível ===== */
 .input, textarea, select {
   width: 100%;
   border: 2px solid var(--line);
@@ -95,29 +119,41 @@ body.login-mode .footer { padding-top: 8px; }
   opacity: .7;
 }
 textarea { min-height: 130px; resize: vertical; font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+
 /* ===== TABS ===== */
 .tabs { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
 .tab { flex: 0 0 auto; border: 1px solid var(--line); background: rgba(255,255,255,.8); color: var(--muted); border-radius: 999px; padding: 9px 14px; cursor: pointer; font-weight: 600; font-size: 13px; }
 .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
 .stat { display: flex; flex-direction: column; gap: 6px; }
 .stat .label { color: var(--muted); font-size: 13px; }
 .stat .value { font-size: 28px; font-weight: 800; }
+.stat .hint { color: var(--muted); font-size: 12px; }
+
+.progress { height: 12px; border-radius: 999px; background: #f3e8d8; overflow: hidden; }
+.progress > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+
 .notice { border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; background: rgba(255,247,237,.9); border: 1px solid #fed7aa; color: #9a3412; font-size: 13px; }
 .notice.ok { background: rgba(236,253,245,.9); border-color: #a7f3d0; color: #065f46; }
+
 /* ===== LISTAS ===== */
 .list { display: flex; flex-direction: column; gap: 10px; }
 .list-item { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: rgba(255,255,255,.85); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: flex-start; }
 .list-item .title { font-weight: 700; }
 .list-item .meta { color: var(--muted); font-size: 12px; margin-top: 4px; }
 .list-item .right { text-align: right; white-space: nowrap; }
+
 .order-category { margin-bottom: 18px; }
 .order-category h4 { margin: 0 0 10px; color: var(--accent); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 2px solid var(--line); padding-bottom: 4px; }
+
 .recipe-toggle { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 13px; margin-top: 8px; }
 .recipe-details { display: none; flex-basis: 100%; margin-top: 12px; border-top: 1px solid var(--line); padding-top: 12px; }
 .recipe-details.open { display: block; animation: fadeIn .3s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
 .chef-feedback { background: rgba(255,251,235,.9); border: 1px solid #fcd34d; border-radius: 12px; padding: 12px; margin-top: 10px; }
 .chef-feedback h4 { margin: 0 0 8px; color: #92400e; }
+
 /* ===== COZINHA CENA ===== */
 .kitchen-scene { border-radius: 16px; overflow: hidden; border: 1px solid var(--line); margin-top: 10px; background: rgba(255,255,255,.7); }
 .kitchen-wall { position: relative; height: 80px; display: flex; align-items: center; justify-content: space-around; font-size: 28px; background: linear-gradient(180deg, rgba(253,243,227,.7), rgba(247,232,210,.7)); }
@@ -128,8 +164,10 @@ textarea { min-height: 130px; resize: vertical; font-family: ui-monospace, Menlo
 .utensil.locked { opacity: .55; filter: grayscale(.7); }
 .utensil.equip { border-color: var(--accent-2); }
 @keyframes bob { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+
 .tag { font-size: 9px; padding: 2px 7px; border-radius: 999px; font-weight: 700; }
 .tag.rent { background: #eff6ff; color: #1e40af; } .tag.own { background: #ecfdf5; color: #065f46; } .tag.locked { background: #f5f5f4; color: #57534e; }
+
 /* ===== LOJA ===== */
 .store-category { margin-bottom: 18px; }
 .store-category-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.85); border: 1px solid var(--line); }
@@ -141,6 +179,7 @@ textarea { min-height: 130px; resize: vertical; font-family: ui-monospace, Menlo
 .store-item-row .item-info { flex: 1; min-width: 140px; }
 .store-item-row .item-name { font-weight: 700; font-size: 14px; }
 .store-item-row .item-price { font-size: 13px; color: var(--accent); font-weight: 700; }
+
 /* ===== CARRINHO ===== */
 .cart-count-badge { position: absolute; top: -6px; right: -6px; background: var(--bad); color: #fff; font-size: 10px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; padding: 0 4px; }
 .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--line); gap: 8px; }
@@ -151,6 +190,7 @@ textarea { min-height: 130px; resize: vertical; font-family: ui-monospace, Menlo
 .cart-item .ci-price { font-weight: 700; color: var(--accent); }
 .cart-total { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(249,245,239,.9); border-radius: 12px; margin-top: 10px; font-size: 17px; font-weight: 800; }
 .cart-warning { background: rgba(255,251,235,.95); border: 1px solid #fcd34d; border-radius: 10px; padding: 10px 12px; font-size: 12px; color: #92400e; margin-top: 10px; }
+
 /* ===== MODAL ===== */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; animation: fadeIn .2s ease; }
 .modal-content { background: #fff; border-radius: 16px; padding: 20px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
@@ -160,6 +200,7 @@ textarea { min-height: 130px; resize: vertical; font-family: ui-monospace, Menlo
 .option-row { display: grid; grid-template-columns: 60px 1fr 60px 30px; gap: 6px; align-items: center; }
 .option-row input { padding: 8px; font-size: 13px; }
 .btn-icon { background: transparent; border: none; cursor: pointer; font-size: 18px; color: var(--bad); padding: 4px; }
+
 /* ===== ADMIN LOJA ===== */
 .admin-cat-card { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: rgba(255,255,255,.85); margin-bottom: 12px; }
 .admin-cat-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -170,23 +211,29 @@ textarea { min-height: 130px; resize: vertical; font-family: ui-monospace, Menlo
 .admin-item-mini .item-name { font-weight: 700; font-size: 13px; }
 .admin-item-mini .item-price { font-size: 12px; color: var(--accent); font-weight: 700; }
 .admin-item-mini .item-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
 /* ===== PONTUAÇÃO ===== */
 .scoring-row { display: grid; grid-template-columns: 1fr 80px 60px; gap: 8px; align-items: center; margin-bottom: 8px; }
 .scoring-row input[type="number"] { width: 100%; }
+
 /* ===== GERAL ===== */
 .pill { display: inline-block; padding: 4px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
 .pill.good { background: #ecfdf5; color: #065f46; } .pill.warn { background: #fffbeb; color: #92400e; }
 .pill.bad { background: #fef2f2; color: #991b1b; } .pill.info { background: #eff6ff; color: #1e40af; } .pill.muted { background: #f5f5f4; color: #57534e; }
+
 .table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .table th, .table td { text-align: left; padding: 9px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .table th { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+
 .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #2f2a25; color: #fff; padding: 12px 16px; border-radius: 12px; box-shadow: var(--shadow); z-index: 50; max-width: 92vw; font-size: 14px; }
 .toast.ok { background: var(--good); } .toast.error { background: var(--bad); }
+
 .footer { text-align: center; color: var(--muted); font-size: 11px; padding: 16px; position: relative; z-index: 2; }
 .muted { color: var(--muted); } .small { font-size: 12px; } .mt { margin-top: 12px; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .space { flex: 1; }
 code.inline { background: rgba(245,245,244,.9); border: 1px solid var(--line); padding: 2px 6px; border-radius: 6px; font-size: 12px; }
+
 /* ===== MOBILE ===== */
 @media (max-width: 700px) {
   .container { padding: 12px; }
@@ -201,15 +248,15 @@ code.inline { background: rgba(245,245,244,.9); border: 1px solid var(--line); p
   .scoring-row { grid-template-columns: 1fr 70px 50px; }
   .option-row { grid-template-columns: 50px 1fr 50px 28px; }
   .modal-content { padding: 16px; }
-  .login-wrap { margin: 24px auto; padding: 0 12px; }
+  
+  /* No celular, o card desce um pouco menos para caber melhor */
+  .login-wrap { margin: 18vh auto 30px; padding: 0 12px; }
   .login-logo-img { width: 110px; height: 110px; }
-}
-@media (max-width: 700px) {
-  /* ...mantém o que já existe... */
+  
+  /* Fundo do login no celular também ancorado pelo topo */
   body.login-mode {
     background:
       linear-gradient(rgba(255,248,239,.62), rgba(255,239,217,.82)),
       url('assets/login-bg.jpg') center top / cover no-repeat;
   }
-  .login-wrap { margin: 10vh auto 30px; padding: 0 12px; }
 }
