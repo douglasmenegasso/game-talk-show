@@ -226,15 +226,35 @@ function renderMissions() {
   return '<div class="card"><h3>Histórico de missões</h3><div class="list">' + (items || '<p class="muted">Nenhuma missão registrada.</p>') + '</div></div>';
 }
 
-function renderRecipe(r) {
+function renderRecipe(r, hideGuidance) {
   const recipe = r.recipe || {};
   const tips = r.tips || [];
   const ingredients = r.ingredients || [];
   const equipment = r.equipment || [];
-  return '<div class="chef-feedback"><h4>👨‍🍳 Feedback e Dicas do Chefe Triix</h4><ul>' + (tips.length ? tips.map(t => '<li>' + esc(t) + '</li>').join('') : '<li>Siga os passos com calma!</li>') + '</ul>' +
-    '<p class="small muted mt"><strong>Bônus:</strong> seguir sugestão de prato novo garante +3 pontos na avaliação!</p></div>' +
-    '<div class="mt"><h4>Ingredientes</h4><ul>' + ingredients.map(i => '<li>' + esc(i.quantity) + ' ' + esc(i.unit) + ' de ' + esc(i.item) + '</li>').join('') + '</ul></div>' +
-    (equipment.length ? '<div class="mt"><h4>Utensílios</h4><ul>' + equipment.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : '');
+  const ps = state.playerState || { kitchen_level: 2 };
+  const playerEquips = (state.equipment || []).map(e => {
+    const meta = EQUIP_META[e.equipment_code] || { name: e.equipment_code };
+    return meta.name;
+  });
+  const baseItems = kitchenBase(ps.kitchen_level).items.map(i => i.name);
+  const allAvailable = [...baseItems, ...playerEquips];
+
+  // Marca cada utensílio da receita como disponível ou não
+  const equipStatus = equipment.map(eq => {
+    const match = allAvailable.find(a => a.toLowerCase().includes(eq.toLowerCase().split(' ')[0]));
+    const ok = match ? true : false;
+    return '<li style="color:' + (ok ? 'var(--good)' : 'var(--bad)') + '">' +
+      (ok ? '✅' : '⚠️') + ' ' + esc(eq) +
+      (ok ? '' : ' <span class="small muted">(não disponível — peça emprestado ou alugue)</span>') +
+      '</li>';
+  }).join('');
+
+  return '<div class="chef-feedback"><h4>👨‍🍳 Feedback e Dicas do Chefe Triix</h4><ul>' +
+    (tips.length ? tips.map(t => '<li>' + esc(t) + '</li>').join('') : '<li>Siga os passos com calma e peça ajuda ao adulto para o forno!</li>') +
+    '</ul><p class="small muted mt"><strong>Bônus:</strong> Seguir uma sugestão de prato novo garante +3 pontos na avaliação final!</p></div>' +
+    '<div class="mt"><h4>🧾 Ingredientes</h4><ul>' + ingredients.map(i => '<li>' + esc(i.quantity) + ' ' + esc(i.unit) + ' de ' + esc(i.item) + '</li>').join('') + '</ul></div>' +
+    '<div class="mt"><h4>🍳 Utensílios necessários</h4><ul>' + equipStatus + '</ul>' +
+    '<p class="small muted">✅ = você tem • ⚠️ = precisa conseguir antes de começar</p></div>';
 }
 
 function renderStore() {
