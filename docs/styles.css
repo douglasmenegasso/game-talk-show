@@ -204,3 +204,12 @@ code.inline { background: rgba(245,245,244,.9); border: 1px solid var(--line); p
   .login-wrap { margin: 24px auto; padding: 0 12px; }
   .login-logo-img { width: 110px; height: 110px; }
 }
+@media (max-width: 700px) {
+  /* ...mantém o que já existe... */
+  body.login-mode {
+    background:
+      linear-gradient(rgba(255,248,239,.62), rgba(255,239,217,.82)),
+      url('assets/login-bg.jpg') center top / cover no-repeat;
+  }
+  .login-wrap { margin: 10vh auto 30px; padding: 0 12px; }
+}
