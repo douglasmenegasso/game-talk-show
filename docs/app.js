@@ -125,17 +125,37 @@ function render() {
 }
 
 function renderLogin() {
-  userBadge.classList.add('hidden'); signoutBtn.classList.add('hidden'); cartBtn.classList.add('hidden'); setKitchen(2);
-  const floats = LOGIN_FLOATS.map(f => '<span class="float-item" style="--x:' + f.x + ';--y:' + f.y + ';--s:' + f.s + ';--d:' + f.d + ';--delay:' + f.delay + '">' + f.e + '</span>').join('');
-  const demoButtons = state.demo ? '<div class="row mt"><button class="btn secondary" data-action="demo-login" data-role="player">Ver como Klara</button><button class="btn secondary" data-action="demo-login" data-role="admin">Ver como Douglas</button></div>' : '';
-  view.innerHTML = '<div class="login-float">' + floats + '</div><div class="login-wrap"><div class="card login-card">' +
-    '<img class="login-logo-img" src="assets/logo-klara.png" alt="Logo" onerror="this.style.display=\'none\'">' +
-    '<h2 class="login-title">Game Talk Show</h2><p class="login-sub">Cozinhando com a Klara • Chefe Triix</p>' +
-    '<form id="login-form"><div class="field"><label>E-mail</label><input class="input" id="email" type="email" required /></div>' +
-    '<div class="field"><label>Senha</label><input class="input" id="password" type="password" required /></div>' +
-    '<button class="btn" type="submit" style="width:100%">Entrar</button></form>' + demoButtons + '</div></div>';
-  const form = $('#login-form'); if (form) form.addEventListener('submit', onLogin);
+  userBadge.classList.add('hidden');
+  signoutBtn.classList.add('hidden');
+  setKitchen(2);
+  const floats = LOGIN_FLOATS.map(f =>
+    '<span class="float-item" style="--x:' + f.x + ';--y:' + f.y + ';--s:' + f.s + ';--d:' + f.d + ';--delay:' + f.delay + '">' + f.e + '</span>'
+  ).join('');
+  const demoButtons = state.demo
+    ? '<div class="row mt"><button class="btn secondary" data-action="demo-login" data-role="player">Ver como Klara</button><button class="btn secondary" data-action="demo-login" data-role="admin">Ver como Douglas</button></div>'
+    : '';
+  const demoNotice = state.demo
+    ? '<div class="notice">Modo de demonstração: configure <code class="inline">config.js</code> com a URL e a chave publishable do Supabase para usar dados reais.</div>'
+    : '';
+  view.innerHTML =
+    '<div class="login-float">' + floats + '</div>' +
+    '<div class="login-wrap"><div class="card login-card">' +
+    '<div class="login-logo-wrap">' +
+    '<img class="login-logo-img" src="assets/logo-klara.png" alt="Logo Chef Klara" onerror="this.outerHTML=\'<div style=\\\'font-size:80px;margin-bottom:8px\\\'>🍳</div>\'">' +
+    '</div>' +
+    '<h2 class="login-title">Game Talk Show</h2>' +
+    '<p class="login-sub">Cozinhando com a Klara • Chefe Triix</p>' +
+    demoNotice +
+    '<form id="login-form">' +
+    '<div class="field"><label for="email">E-mail</label><input class="input" id="email" type="email" placeholder="seu@email.com" autocomplete="username" required /></div>' +
+    '<div class="field"><label for="password">Senha</label><input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password" required /></div>' +
+    '<button class="btn" type="submit" style="width:100%;padding:14px;font-size:16px">Entrar</button>' +
+    '</form>' +
+    demoButtons + '</div></div>';
+  const form = $('#login-form');
+  if (form) form.addEventListener('submit', onLogin);
 }
+  
 async function onLogin(e) {
   e.preventDefault();
   if (!client) { toast('Supabase não configurado.', 'error'); return; }
